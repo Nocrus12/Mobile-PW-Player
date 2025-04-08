@@ -10,7 +10,7 @@ import android.media.MediaPlayer
 import android.os.IBinder
 import android.os.Build
 import androidx.core.app.NotificationCompat
-
+import androidx.media.app.NotificationCompat.MediaStyle
 
 class PlaybackService : Service() {
 
@@ -105,31 +105,35 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
-        fun pending(action: String, requestCode: Int) = PendingIntent.getService(
-            this, requestCode,
-            Intent(this, PlaybackService::class.java).apply { this.action = action },
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val playPauseIcon = if (mediaPlayer.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        val playPauseAction = if (mediaPlayer.isPlaying) "Pause" else "Play"
 
-        // TODO Fix buttons view: no icons viewed (currently only titles are shown)
-        // TODO Fix buttons view: only first three buttons viewed (missing access to the last two)
+        val playPauseIntent = if (mediaPlayer.isPlaying) {
+            Intent(this, PlaybackService::class.java).apply { action = "ACTION_PAUSE" }
+        } else {
+            Intent(this, PlaybackService::class.java).apply { action = "ACTION_PLAY" }
+        }
+
+        val prevIntent = Intent(this, PlaybackService::class.java).apply { action = "ACTION_PREVIOUS" }
+        val nextIntent = Intent(this, PlaybackService::class.java).apply { action = "ACTION_NEXT" }
+
+        val playPausePendingIntent = PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_IMMUTABLE)
+        val prevPendingIntent = PendingIntent.getService(this, 1, prevIntent, PendingIntent.FLAG_IMMUTABLE)
+        val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
+
         // TODO Enhance view:
-        //  fetch title from filename
-        //  unify play/pause buttons with switching icons
-        //  replace stop button (it stop the service, not the music)
         //  add progress bar
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Now Playing")
-            .setContentText("Track ${currentTrackIndex + 1}")
+            .setContentTitle("Track ${currentTrackIndex + 1}")
+            .setContentText("Now Playing")
             .setSmallIcon(R.drawable.music_note)
-            .addAction(R.drawable.prev, "Prev", pending("ACTION_PREVIOUS", 4))
-            .addAction(R.drawable.play, "Play", pending("ACTION_PLAY", 0))
-            .addAction(R.drawable.pause, "Pause", pending("ACTION_PAUSE", 1))
-            .addAction(R.drawable.next, "Next", pending("ACTION_NEXT", 3))
-            .addAction(R.drawable.stop, "Stop", pending("ACTION_STOP", 2))
+            .addAction(R.drawable.ic_prev, "Prev", prevPendingIntent)
+            .addAction(playPauseIcon, playPauseAction, playPausePendingIntent)
+            .addAction(R.drawable.ic_next, "Next", nextPendingIntent)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
+            .setStyle(MediaStyle())
             .build()
     }
 
@@ -145,4 +149,3 @@ class PlaybackService : Service() {
         }
     }
 }
-
