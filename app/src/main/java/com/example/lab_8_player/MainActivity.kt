@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     Button(onClick = {
-                        val intent = Intent(applicationContext, MusicPlayerService::class.java).apply {
+                        val intent = Intent(applicationContext, PlaybackService::class.java).apply {
                             action = "ACTION_PLAY"
                         }
                         ContextCompat.startForegroundService(applicationContext, intent)
@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(onClick = {
-                        val intent = Intent(applicationContext, MusicPlayerService::class.java).apply {
+                        val intent = Intent(applicationContext, PlaybackService::class.java).apply {
                             action = "ACTION_STOP"
                         }
                         ContextCompat.startForegroundService(applicationContext, intent)

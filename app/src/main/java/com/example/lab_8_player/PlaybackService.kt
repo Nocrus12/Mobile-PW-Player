@@ -9,14 +9,25 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.os.IBinder
 import android.os.Build
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 
-class MusicPlayerService : Service() {
+
+class PlaybackService : Service() {
 
     private lateinit var mediaPlayer: MediaPlayer
-    private val CHANNEL_ID = "music_playback_channel"
+    private val CHANNEL_ID = "playback_channel"
     private val NOTIF_ID = 1
+
+    // TODO Implement BG service to fetch soundtracks from local storage
+    // soundtracks are hardcoded until BG service implemented
+
+    private val playlist = listOf(
+        R.raw.all_my_life,
+        R.raw.music_of_pain,
+        R.raw.sing_lucifer,
+        R.raw.the_night_before_fight
+    )
+    private var currentTrackIndex = 0
 
     override fun onCreate() {
         super.onCreate()
@@ -26,32 +37,61 @@ class MusicPlayerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
 
-        if (!::mediaPlayer.isInitialized) {
-            // TODO Make library parser. BG service
-            mediaPlayer = MediaPlayer.create(this, R.raw.sample_track) // Add `sample_music.mp3` in res/raw
-        }
-
         when (action) {
             "ACTION_PLAY" -> {
+                if (!::mediaPlayer.isInitialized) {
+                    initMediaPlayer()
+                }
                 if (!mediaPlayer.isPlaying) mediaPlayer.start()
             }
             "ACTION_PAUSE" -> {
-                if (mediaPlayer.isPlaying) mediaPlayer.pause()
+                if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
+                    mediaPlayer.pause()
+                }
             }
             "ACTION_STOP" -> {
                 stopSelf()
             }
             "ACTION_NEXT" -> {
-                Toast.makeText(this, "Next track", Toast.LENGTH_SHORT).show()
+                nextTrack()
             }
             "ACTION_PREVIOUS" -> {
-                Toast.makeText(this, "Previous track", Toast.LENGTH_SHORT).show()
+                previousTrack()
             }
         }
 
         startForeground(NOTIF_ID, createNotification())
-
         return START_STICKY
+    }
+
+    private fun initMediaPlayer() {
+        mediaPlayer = MediaPlayer.create(this, playlist[currentTrackIndex])
+        mediaPlayer.setOnCompletionListener {
+            nextTrack()
+        }
+    }
+
+    private fun nextTrack() {
+        if (::mediaPlayer.isInitialized) {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+        }
+
+        currentTrackIndex = (currentTrackIndex + 1) % playlist.size
+        initMediaPlayer()
+        mediaPlayer.start()
+    }
+
+    private fun previousTrack() {
+        if (::mediaPlayer.isInitialized) {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+        }
+
+        currentTrackIndex =
+            if (currentTrackIndex - 1 < 0) playlist.size - 1 else currentTrackIndex - 1
+        initMediaPlayer()
+        mediaPlayer.start()
     }
 
     override fun onDestroy() {
@@ -65,27 +105,21 @@ class MusicPlayerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
-        val playIntent = Intent(this, MusicPlayerService::class.java).apply { action = "ACTION_PLAY" }
-        val pauseIntent = Intent(this, MusicPlayerService::class.java).apply { action = "ACTION_PAUSE" }
-        val stopIntent = Intent(this, MusicPlayerService::class.java).apply { action = "ACTION_STOP" }
-        val nextIntent = Intent(this, MusicPlayerService::class.java).apply { action = "ACTION_NEXT" }
-        val previousIntent = Intent(this, MusicPlayerService::class.java).apply { action = "ACTION_PREVIOUS" }
-
-        val playPending = PendingIntent.getService(this, 0, playIntent, PendingIntent.FLAG_IMMUTABLE)
-        val pausePending = PendingIntent.getService(this, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE)
-        val stopPending = PendingIntent.getService(this, 2, stopIntent, PendingIntent.FLAG_IMMUTABLE)
-        val nextPending = PendingIntent.getService(this, 3, nextIntent, PendingIntent.FLAG_IMMUTABLE)
-        val prevPending = PendingIntent.getService(this, 4, previousIntent, PendingIntent.FLAG_IMMUTABLE)
+        fun pending(action: String, requestCode: Int) = PendingIntent.getService(
+            this, requestCode,
+            Intent(this, PlaybackService::class.java).apply { this.action = action },
+            PendingIntent.FLAG_IMMUTABLE
+        )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Now Playing")
-            .setContentText("Sample Music")
+            .setContentText("Track ${currentTrackIndex + 1}")
             .setSmallIcon(R.drawable.music_note)
-            .addAction(R.drawable.prev, "Prev", prevPending)
-            .addAction(R.drawable.play, "Play", playPending)
-            .addAction(R.drawable.pause, "Pause", pausePending)
-            .addAction(R.drawable.next, "Next", nextPending)
-            .addAction(R.drawable.stop, "Stop", stopPending)
+            .addAction(R.drawable.prev, "Prev", pending("ACTION_PREVIOUS", 4))
+            .addAction(R.drawable.play, "Play", pending("ACTION_PLAY", 0))
+            .addAction(R.drawable.pause, "Pause", pending("ACTION_PAUSE", 1))
+            .addAction(R.drawable.next, "Next", pending("ACTION_NEXT", 3))
+            .addAction(R.drawable.stop, "Stop", pending("ACTION_STOP", 2))
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .build()
@@ -96,10 +130,11 @@ class MusicPlayerService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Music Playback",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
     }
 }
+
