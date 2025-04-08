@@ -111,6 +111,14 @@ class PlaybackService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
+        // TODO Fix buttons view: no icons viewed (currently only titles are shown)
+        // TODO Fix buttons view: only first three buttons viewed (missing access to the last two)
+        // TODO Enhance view:
+        //  fetch title from filename
+        //  unify play/pause buttons with switching icons
+        //  replace stop button (it stop the service, not the music)
+        //  add progress bar
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Now Playing")
             .setContentText("Track ${currentTrackIndex + 1}")
