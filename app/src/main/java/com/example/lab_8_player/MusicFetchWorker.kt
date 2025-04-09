@@ -1,9 +1,7 @@
 package com.example.lab_8_player
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.documentfile.provider.DocumentFile
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -31,17 +29,6 @@ class MusicFetchWorker(
             rootFolder?.listFiles()?.forEach { file ->
                 if (file.isFile && isAudio(file.name ?: "")) {
                     MusicLibrary.tracks.add(file.uri)
-                }
-            }
-
-            if (MusicLibrary.tracks.isNotEmpty()) {
-                val startIntent = Intent(applicationContext, PlaybackService::class.java).apply {
-                    action = "ACTION_PLAY"
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    applicationContext.startForegroundService(startIntent)
-                } else {
-                    applicationContext.startService(startIntent)
                 }
             }
 

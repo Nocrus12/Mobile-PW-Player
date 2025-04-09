@@ -93,9 +93,6 @@ class MainActivity : ComponentActivity() {
             pickMusicFolder.launch(null)
         }
 
-
-        pickMusicFolder.launch(null)
-
         val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
         WorkManager.getInstance(this).enqueue(fetchRequest)
 
