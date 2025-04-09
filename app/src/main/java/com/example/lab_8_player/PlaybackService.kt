@@ -134,7 +134,10 @@ class PlaybackService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(
-                MusicLibrary.tracks.getOrNull(currentTrackIndex)?.lastPathSegment ?: "Track ${currentTrackIndex + 1}"
+                MusicLibrary.tracks.getOrNull(currentTrackIndex)
+                    ?.lastPathSegment
+                    ?.substringAfterLast("/")
+                    ?.substringBeforeLast(".") ?: "Track ${currentTrackIndex + 1}"
             )
             .setContentText("Pavel Plamenev")
             .setSmallIcon(R.drawable.music_note)
