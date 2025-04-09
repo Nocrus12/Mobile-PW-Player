@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.lab_8_player.ui.theme.Lab_8_PlayerTheme
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 
 class MainActivity : ComponentActivity() {
@@ -32,10 +34,16 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                arrayOf(
+                    Manifest.permission.POST_NOTIFICATIONS,
+                    Manifest.permission.READ_MEDIA_AUDIO),
                 0
             )
         }
+
+
+        val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
+        WorkManager.getInstance(this).enqueue(fetchRequest)
 
         setContent {
             Lab_8_PlayerTheme {
