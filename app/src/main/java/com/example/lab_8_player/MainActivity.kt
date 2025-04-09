@@ -23,9 +23,24 @@ import androidx.core.content.ContextCompat
 import com.example.lab_8_player.ui.theme.Lab_8_PlayerTheme
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 
 
 class MainActivity : ComponentActivity() {
+
+    private val pickMusicFolder =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+            uri?.let {
+                // Launch the worker with this URI
+                MusicFetchWorker.musicFolderUri = it
+                val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
+                WorkManager.getInstance(this).enqueue(fetchRequest)
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +56,7 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        pickMusicFolder.launch(null)
 
         val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
         WorkManager.getInstance(this).enqueue(fetchRequest)

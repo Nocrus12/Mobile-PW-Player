@@ -2,8 +2,6 @@ package com.example.lab_8_player
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import androidx.documentfile.provider.DocumentFile
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -12,8 +10,12 @@ import kotlinx.coroutines.withContext
 
 class MusicFetchWorker(
     private val context: Context,
-    params: WorkerParameters
-) : CoroutineWorker(context, params) {
+    workerParams: WorkerParameters
+) : CoroutineWorker(context, workerParams) {
+
+    companion object {
+        var musicFolderUri: Uri? = null
+    }
 
     private val supportedExtensions = listOf("mp3", "wav", "ogg")
 
@@ -21,27 +23,12 @@ class MusicFetchWorker(
         try {
             MusicLibrary.tracks.clear()
 
-            val musicUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-            val projection = arrayOf(MediaStore.Audio.Media._ID)
+            val uri = musicFolderUri ?: return@withContext Result.failure()
 
-            val selection = supportedExtensions.joinToString(" OR ") {
-                "${MediaStore.Audio.Media.DISPLAY_NAME} LIKE '%.${it}'"
-            }
-
-            val cursor = context.contentResolver.query(
-                musicUri,
-                projection,
-                selection,
-                null,
-                null
-            )
-
-            cursor?.use {
-                val idColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-                while (it.moveToNext()) {
-                    val id = it.getLong(idColumn)
-                    val contentUri = Uri.withAppendedPath(musicUri, id.toString())
-                    MusicLibrary.tracks.add(contentUri)
+            val rootFolder = DocumentFile.fromTreeUri(context, uri)
+            rootFolder?.listFiles()?.forEach { file ->
+                if (file.isFile && isAudio(file.name ?: "")) {
+                    MusicLibrary.tracks.add(file.uri)
                 }
             }
 
@@ -50,5 +37,9 @@ class MusicFetchWorker(
             e.printStackTrace()
             Result.failure()
         }
+    }
+
+    private fun isAudio(fileName: String): Boolean {
+        return supportedExtensions.any { fileName.endsWith(".$it", ignoreCase = true) }
     }
 }
