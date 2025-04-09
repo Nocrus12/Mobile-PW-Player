@@ -18,10 +18,6 @@ class PlaybackService : Service() {
     private val CHANNEL_ID = "playback_channel"
     private val NOTIF_ID = 1
 
-    // TODO Implement BG service to fetch soundtracks from local storage
-    // soundtracks are hardcoded until BG service implemented
-
-
     private var currentTrackIndex = 0
 
     override fun onCreate() {
@@ -127,6 +123,7 @@ class PlaybackService : Service() {
         val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
 
         // TODO Fix: prev/next actions performs after double click only
+        // TODO Fix: failed persistence (the app keep requesting to pick folder after restart
 
         // TODO Enhance view:
         //  add progress bar
