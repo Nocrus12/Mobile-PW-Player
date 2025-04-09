@@ -35,12 +35,24 @@ class MainActivity : ComponentActivity() {
     private val pickMusicFolder =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
             uri?.let {
-                // Launch the worker with this URI
+                // Persist permission
+                contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
+                // Save URI
+                getSharedPreferences("music_prefs", MODE_PRIVATE).edit()
+                    .putString("music_folder_uri", it.toString())
+                    .apply()
+
+                // Pass URI and start worker
                 MusicFetchWorker.musicFolderUri = it
                 val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
                 WorkManager.getInstance(this).enqueue(fetchRequest)
             }
         }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +67,32 @@ class MainActivity : ComponentActivity() {
                 0
             )
         }
+
+        val savedUri = getSharedPreferences("music_prefs", MODE_PRIVATE)
+            .getString("music_folder_uri", null)
+
+        if (savedUri != null) {
+            val uri = Uri.parse(savedUri)
+            MusicFetchWorker.musicFolderUri = uri
+
+            // Re-request permission to ensure it's valid
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
+                // Launch worker
+                val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
+                WorkManager.getInstance(this).enqueue(fetchRequest)
+            } catch (e: SecurityException) {
+                // If permission failed, fallback to asking again
+                pickMusicFolder.launch(null)
+            }
+        } else {
+            pickMusicFolder.launch(null)
+        }
+
 
         pickMusicFolder.launch(null)
 
