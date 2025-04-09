@@ -21,12 +21,7 @@ class PlaybackService : Service() {
     // TODO Implement BG service to fetch soundtracks from local storage
     // soundtracks are hardcoded until BG service implemented
 
-    private val playlist = listOf(
-        R.raw.all_my_life,
-        R.raw.music_of_pain,
-        R.raw.sing_lucifer,
-        R.raw.the_night_before_fight
-    )
+
     private var currentTrackIndex = 0
 
     override fun onCreate() {
@@ -65,31 +60,41 @@ class PlaybackService : Service() {
     }
 
     private fun initMediaPlayer() {
-        mediaPlayer = MediaPlayer.create(this, playlist[currentTrackIndex])
-        mediaPlayer.setOnCompletionListener {
-            nextTrack()
+        if (MusicLibrary.tracks.isEmpty()) return
+
+        val uri = MusicLibrary.tracks[currentTrackIndex]
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(this@PlaybackService, uri)
+            prepare()
+            setOnCompletionListener {
+                nextTrack()
+            }
         }
     }
 
     private fun nextTrack() {
+        if (MusicLibrary.tracks.isEmpty()) return
+
         if (::mediaPlayer.isInitialized) {
             mediaPlayer.stop()
             mediaPlayer.release()
         }
 
-        currentTrackIndex = (currentTrackIndex + 1) % playlist.size
+        currentTrackIndex = (currentTrackIndex + 1) % MusicLibrary.tracks.size
         initMediaPlayer()
         mediaPlayer.start()
     }
 
     private fun previousTrack() {
+        if (MusicLibrary.tracks.isEmpty()) return
+
         if (::mediaPlayer.isInitialized) {
             mediaPlayer.stop()
             mediaPlayer.release()
         }
 
         currentTrackIndex =
-            if (currentTrackIndex - 1 < 0) playlist.size - 1 else currentTrackIndex - 1
+            if (currentTrackIndex - 1 < 0) MusicLibrary.tracks.size - 1 else currentTrackIndex - 1
         initMediaPlayer()
         mediaPlayer.start()
     }
@@ -121,12 +126,20 @@ class PlaybackService : Service() {
         val prevPendingIntent = PendingIntent.getService(this, 1, prevIntent, PendingIntent.FLAG_IMMUTABLE)
         val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
 
+        // TODO Fix: prev/next actions performs after double click only
+
         // TODO Enhance view:
         //  add progress bar
+        //  trim fetched path down to title only
+        //  add fetch track author from metadata
+
+        // TODO Add: folder picker button as feature: change folder (after UI implemented)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Track ${currentTrackIndex + 1}")
-            .setContentText("Now Playing")
+            .setContentTitle(
+                MusicLibrary.tracks.getOrNull(currentTrackIndex)?.lastPathSegment ?: "Track ${currentTrackIndex + 1}"
+            )
+            .setContentText("Pavel Plamenev")
             .setSmallIcon(R.drawable.music_note)
             .addAction(R.drawable.ic_prev, "Prev", prevPendingIntent)
             .addAction(playPauseIcon, playPauseAction, playPausePendingIntent)
