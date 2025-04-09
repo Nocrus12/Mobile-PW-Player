@@ -53,10 +53,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
@@ -71,6 +69,7 @@ class MainActivity : ComponentActivity() {
         val savedUri = getSharedPreferences("music_prefs", MODE_PRIVATE)
             .getString("music_folder_uri", null)
 
+        // Check if the folder URI is saved
         if (savedUri != null) {
             val uri = Uri.parse(savedUri)
             MusicFetchWorker.musicFolderUri = uri
@@ -82,19 +81,20 @@ class MainActivity : ComponentActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
 
-                // Launch worker
-                val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
-                WorkManager.getInstance(this).enqueue(fetchRequest)
+                // Check if tracks have already been fetched
+                if (MusicLibrary.tracks.isEmpty()) {
+                    // Only trigger the worker if tracks are not already fetched
+                    val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
+                    WorkManager.getInstance(this).enqueue(fetchRequest)
+                }
             } catch (e: SecurityException) {
                 // If permission failed, fallback to asking again
                 pickMusicFolder.launch(null)
             }
         } else {
+            // No saved URI, prompt user to pick folder
             pickMusicFolder.launch(null)
         }
-
-        val fetchRequest = OneTimeWorkRequestBuilder<MusicFetchWorker>().build()
-        WorkManager.getInstance(this).enqueue(fetchRequest)
 
         setContent {
             Lab_8_PlayerTheme {
@@ -129,4 +129,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 

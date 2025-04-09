@@ -122,8 +122,8 @@ class PlaybackService : Service() {
         val prevPendingIntent = PendingIntent.getService(this, 1, prevIntent, PendingIntent.FLAG_IMMUTABLE)
         val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        // TODO Fix: prev/next actions performs after double click only
-        // TODO Fix: failed persistence (the app keep requesting to pick folder after restart
+        // TODO Fix:
+        //  failed persistence (the app keep requesting to pick folder after restart)
 
         // TODO Enhance view:
         //  add progress bar
