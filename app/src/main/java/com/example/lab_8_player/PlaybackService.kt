@@ -6,7 +6,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.IBinder
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -122,24 +124,16 @@ class PlaybackService : Service() {
         val prevPendingIntent = PendingIntent.getService(this, 1, prevIntent, PendingIntent.FLAG_IMMUTABLE)
         val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        // TODO Fix:
-        //  failed persistence (the app keep requesting to pick folder after restart)
-
-        // TODO Enhance view:
-        //  add progress bar
-        //  trim fetched path down to title only
-        //  add fetch track author from metadata
-
-        // TODO Add: folder picker button as feature: change folder (after UI implemented)
+        val uri = MusicLibrary.tracks.getOrNull(currentTrackIndex)
+        val artistName = getArtistName(uri)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(
-                MusicLibrary.tracks.getOrNull(currentTrackIndex)
-                    ?.lastPathSegment
+                uri?.lastPathSegment
                     ?.substringAfterLast("/")
                     ?.substringBeforeLast(".") ?: "Track ${currentTrackIndex + 1}"
             )
-            .setContentText("Pavel Plamenev")
+            .setContentText(artistName ?: "Unknown Artist")
             .setSmallIcon(R.drawable.music_note)
             .addAction(R.drawable.ic_prev, "Prev", prevPendingIntent)
             .addAction(playPauseIcon, playPauseAction, playPausePendingIntent)
@@ -149,6 +143,21 @@ class PlaybackService : Service() {
             .setStyle(MediaStyle())
             .build()
     }
+
+    private fun getArtistName(uri: Uri?): String? {
+        uri ?: return null
+
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(this, uri)
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+        } catch (e: Exception) {
+            null
+        } finally {
+            retriever.release()
+        }
+    }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -162,3 +171,11 @@ class PlaybackService : Service() {
         }
     }
 }
+
+// TODO Fix:
+//  failed persistence (the app keep requesting to pick folder after restart)
+
+// TODO Enhance view:
+//  add progress bar
+
+// TODO Add: folder picker button as feature: change folder (after UI implemented)
