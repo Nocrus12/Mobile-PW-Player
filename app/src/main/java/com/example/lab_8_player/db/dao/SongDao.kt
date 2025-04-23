@@ -21,6 +21,9 @@ interface SongDao {
     @Query("SELECT uri FROM Song")
     suspend fun getAllUris(): List<String>
 
+    @Query("SELECT * FROM Song WHERE isFavorite = true")
+    suspend fun getAllFavorites(): List<Song>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSongs(songs: List<Song>)
 
