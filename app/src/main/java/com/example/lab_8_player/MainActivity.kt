@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Button(onClick = {
                         val intent = Intent(applicationContext, PlaybackService::class.java).apply {
-                            action = "ACTION_PLAY"
+                            action = "ACTION_START"
                         }
                         ContextCompat.startForegroundService(applicationContext, intent)
                     }) {
