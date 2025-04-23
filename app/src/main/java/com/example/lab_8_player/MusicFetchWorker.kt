@@ -1,10 +1,14 @@
 package com.example.lab_8_player
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import androidx.room.Room
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.lab_8_player.db.AppDatabase
+import com.example.lab_8_player.db.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -17,21 +21,55 @@ class MusicFetchWorker(
         var musicFolderUri: Uri? = null
     }
 
-    private val supportedExtensions = listOf("mp3", "wav", "ogg")
+    override suspend fun doWork(): Result {
+        return try {
+            val db = Room
+                .databaseBuilder(context, AppDatabase::class.java, "app_db")
+                .build()
+            val songDao = db.songDao()
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            MusicLibrary.tracks.clear()
+            val root = MusicFetchWorker.musicFolderUri
+                ?.let { DocumentFile.fromTreeUri(context, it) }
 
-            val uri = musicFolderUri ?: return@withContext Result.failure()
+            val songs = root
+                ?.listFiles()
+                ?.filter { it.isFile && isAudio(it.name.orEmpty()) }
+                ?.map { file ->
+                    // 1. Extract raw metadata
+                    val retriever = MediaMetadataRetriever().apply {
+                        setDataSource(context, file.uri)
+                    }
+                    val rawTitle    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                    val rawArtist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                    val rawDuration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    retriever.release()
 
-            val rootFolder = DocumentFile.fromTreeUri(context, uri)
-            rootFolder?.listFiles()?.forEach { file ->
-                if (file.isFile && isAudio(file.name ?: "")) {
-                    MusicLibrary.tracks.add(file.uri)
+                    // 2. Derive fallback filename (no extension)
+                    val fileName = file.name
+                        .orEmpty()
+                        .substringBeforeLast('.')
+                        .substringAfterLast('/')
+
+                    // 3. Build Song entity with safe defaults
+                    Song(
+                        uri      = file.uri.toString(),
+                        name     = rawTitle.takeIf { !it.isNullOrBlank() }
+                            ?: fileName,
+                        artist   = rawArtist.takeIf { !it.isNullOrBlank() }
+                            ?: "Unknown Artist",
+                        duration = rawDuration
+                            ?.toLongOrNull()
+                            ?.coerceAtMost(Int.MAX_VALUE.toLong())
+                            ?.toInt()
+                            ?: 0
+                    )
                 }
-            }
 
+                .orEmpty()
+
+            if (songs.isNotEmpty()) {
+                songDao.insertSongs(songs)
+            }
             Result.success()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -39,7 +77,10 @@ class MusicFetchWorker(
         }
     }
 
-    private fun isAudio(fileName: String): Boolean {
-        return supportedExtensions.any { fileName.endsWith(".$it", ignoreCase = true) }
-    }
+    private fun isAudio(fileName: String) =
+        listOf("mp3", "wav", "ogg").any { fileName.endsWith(".$it", ignoreCase = true) }
 }
+
+// TODO Fix: DB input:
+//  song title (fetch from filename)
+//  artist ( ?: Unknown artist
