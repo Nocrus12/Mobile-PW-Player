@@ -11,88 +11,109 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.IBinder
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.room.Room
+import com.example.lab_8_player.db.AppDatabase
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+
+import kotlinx.coroutines.flow.first
+import androidx.core.net.toUri
 
 class PlaybackService : Service() {
 
-    private lateinit var mediaPlayer: MediaPlayer
-    private val CHANNEL_ID = "playback_channel"
-    private val NOTIF_ID = 1
+    companion object {
+        private const val TAG = "PlaybackService"            // ← define a TAG for logging
+    }
 
+    private lateinit var mediaPlayer: MediaPlayer
+    private lateinit var db: AppDatabase
+    private var trackUris: List<Uri> = emptyList()
     private var currentTrackIndex = 0
+
+    private val CHANNEL_ID = "playback_channel"
+    private val NOTIF_ID   = 1
 
     override fun onCreate() {
         super.onCreate()
+        // 1. Create notification channel
         createNotificationChannel()
+
+        // 2. Obtain Room database
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "app_db"
+        ).build()
+        Log.d(TAG, "Service created")                         // ← simple lifecycle log :contentReference[oaicite:0]{index=0}
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action
+    override fun onStartCommand(
+        intent: Intent?, flags: Int, startId: Int
+    ): Int {
+        when (intent?.action) {
+            "ACTION_START" -> {
+                val songs = runBlocking {
+                    db.songDao().getAllUris()
+                }
+                trackUris = songs.map { it.toUri() }
 
-        when (action) {
-            "ACTION_PLAY" -> {
-                if (!::mediaPlayer.isInitialized) {
+                Log.d(TAG, "Fetched ${trackUris.size} URIs from DB")   // ← log size :contentReference[oaicite:2]{index=2}
+                trackUris.forEachIndexed { idx, uri ->
+                    Log.d(TAG, "trackUris[$idx] = $uri")               // ← log each URI
+                }
+
+                // 3b. Initialize player if we have at least one track
+                if (trackUris.isNotEmpty()) {
                     initMediaPlayer()
                 }
-                if (!mediaPlayer.isPlaying) mediaPlayer.start()
+            }
+            "ACTION_PLAY" -> {
+                if (::mediaPlayer.isInitialized && !mediaPlayer.isPlaying) {
+                    mediaPlayer.start()
+                }
             }
             "ACTION_PAUSE" -> {
                 if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
                     mediaPlayer.pause()
                 }
             }
-            "ACTION_STOP" -> {
-                stopSelf()
-            }
-            "ACTION_NEXT" -> {
-                nextTrack()
-            }
-            "ACTION_PREVIOUS" -> {
-                previousTrack()
-            }
+            "ACTION_NEXT" -> nextTrack()
+            "ACTION_PREVIOUS" -> previousTrack()
+            "ACTION_STOP" -> stopSelf()
         }
 
+        // 4. Promote to foreground with updated notification
         startForeground(NOTIF_ID, createNotification())
         return START_STICKY
     }
 
     private fun initMediaPlayer() {
-        if (MusicLibrary.tracks.isEmpty()) return
-
-        val uri = MusicLibrary.tracks[currentTrackIndex]
+        val uri = trackUris[currentTrackIndex]
         mediaPlayer = MediaPlayer().apply {
             setDataSource(this@PlaybackService, uri)
             prepare()
-            setOnCompletionListener {
-                nextTrack()
-            }
+            setOnCompletionListener { nextTrack() }
         }
     }
 
     private fun nextTrack() {
-        if (MusicLibrary.tracks.isEmpty()) return
-
-        if (::mediaPlayer.isInitialized) {
-            mediaPlayer.stop()
-            mediaPlayer.release()
-        }
-
-        currentTrackIndex = (currentTrackIndex + 1) % MusicLibrary.tracks.size
+        if (!::mediaPlayer.isInitialized || trackUris.isEmpty()) return
+        mediaPlayer.stop()
+        mediaPlayer.release()
+        currentTrackIndex = (currentTrackIndex + 1) % trackUris.size
         initMediaPlayer()
         mediaPlayer.start()
     }
 
     private fun previousTrack() {
-        if (MusicLibrary.tracks.isEmpty()) return
-
-        if (::mediaPlayer.isInitialized) {
-            mediaPlayer.stop()
-            mediaPlayer.release()
-        }
-
+        if (!::mediaPlayer.isInitialized || trackUris.isEmpty()) return
+        mediaPlayer.stop()
+        mediaPlayer.release()
         currentTrackIndex =
-            if (currentTrackIndex - 1 < 0) MusicLibrary.tracks.size - 1 else currentTrackIndex - 1
+            if (currentTrackIndex - 1 < 0) trackUris.lastIndex else currentTrackIndex - 1
         initMediaPlayer()
         mediaPlayer.start()
     }
@@ -108,56 +129,41 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
-        val playPauseIcon = if (mediaPlayer.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-        val playPauseAction = if (mediaPlayer.isPlaying) "Pause" else "Play"
+        // Safely check mediaPlayer before accessing state
+        val isPlaying = ::mediaPlayer.isInitialized && mediaPlayer.isPlaying
+        val playPauseIcon = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_PLAY"
 
-        val playPauseIntent = if (mediaPlayer.isPlaying) {
-            Intent(this, PlaybackService::class.java).apply { action = "ACTION_PAUSE" }
-        } else {
-            Intent(this, PlaybackService::class.java).apply { action = "ACTION_PLAY" }
+        val playPauseIntent = Intent(this, PlaybackService::class.java).apply {
+            action = playPauseAction
+        }
+        val prevIntent = Intent(this, PlaybackService::class.java).apply {
+            action = "ACTION_PREVIOUS"
+        }
+        val nextIntent = Intent(this, PlaybackService::class.java).apply {
+            action = "ACTION_NEXT"
         }
 
-        val prevIntent = Intent(this, PlaybackService::class.java).apply { action = "ACTION_PREVIOUS" }
-        val nextIntent = Intent(this, PlaybackService::class.java).apply { action = "ACTION_NEXT" }
+        val playPausePI = PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_IMMUTABLE)
+        val prevPI      = PendingIntent.getService(this, 1, prevIntent,      PendingIntent.FLAG_IMMUTABLE)
+        val nextPI      = PendingIntent.getService(this, 2, nextIntent,      PendingIntent.FLAG_IMMUTABLE)
 
-        val playPausePendingIntent = PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_IMMUTABLE)
-        val prevPendingIntent = PendingIntent.getService(this, 1, prevIntent, PendingIntent.FLAG_IMMUTABLE)
-        val nextPendingIntent = PendingIntent.getService(this, 2, nextIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val uri = MusicLibrary.tracks.getOrNull(currentTrackIndex)
-        val artistName = getArtistName(uri)
+        val uri = trackUris.getOrNull(currentTrackIndex)
+        val title = uri?.lastPathSegment
+            ?.substringAfterLast("/")
+            ?.substringBeforeLast(".") ?: "Track ${currentTrackIndex + 1}"
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(
-                uri?.lastPathSegment
-                    ?.substringAfterLast("/")
-                    ?.substringBeforeLast(".") ?: "Track ${currentTrackIndex + 1}"
-            )
-            .setContentText(artistName ?: "Unknown Artist")
+            .setContentTitle(title)
             .setSmallIcon(R.drawable.music_note)
-            .addAction(R.drawable.ic_prev, "Prev", prevPendingIntent)
-            .addAction(playPauseIcon, playPauseAction, playPausePendingIntent)
-            .addAction(R.drawable.ic_next, "Next", nextPendingIntent)
+            .addAction(R.drawable.ic_prev, "Prev", prevPI)
+            .addAction(playPauseIcon, playPauseAction, playPausePI)
+            .addAction(R.drawable.ic_next, "Next", nextPI)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setStyle(MediaStyle())
             .build()
     }
-
-    private fun getArtistName(uri: Uri?): String? {
-        uri ?: return null
-
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(this, uri)
-            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-        } catch (e: Exception) {
-            null
-        } finally {
-            retriever.release()
-        }
-    }
-
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -166,11 +172,14 @@ class PlaybackService : Service() {
                 "Music Playback",
                 NotificationManager.IMPORTANCE_HIGH
             )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
         }
     }
 }
+
+// TODO Fix: DB fetch
+
 
 // TODO Fix:
 //  failed persistence (the app keep requesting to pick folder after restart)
