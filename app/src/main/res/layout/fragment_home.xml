@@ -13,18 +13,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Search Field -->
-<!--        <EditText-->
-<!--            android:id="@+id/searchField"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:hint="Search traks"-->
-<!--            android:textColorHint="#808080"-->
-<!--            android:drawableStart="@android:drawable/ic_menu_search"-->
-<!--            android:padding="12dp"-->
-<!--            android:background="@drawable/search_background"-->
-<!--            android:layout_marginBottom="16dp" />-->
-
         <!-- Favorites Section -->
         <TextView
             android:layout_width="wrap_content"

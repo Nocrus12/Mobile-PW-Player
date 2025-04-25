@@ -3,7 +3,7 @@
 
     <data>
         <variable
-            name="track"
+            name="song"
             type="com.example.lab_8_player.db.model.Song" />
     </data>
 
@@ -21,20 +21,20 @@
             android:padding="12dp">
 
             <TextView
-                android:id="@+id/favTrackTitle"
+                android:id="@+id/favSongTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@{track.title}"
+                android:text="@{song.name}"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
             <TextView
-                android:id="@+id/favTrackArtist"
+                android:id="@+id/favSongArtist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@{track.artist}"
+                android:text="@{song.artist}"
                 android:textSize="12sp"
                 android:textColor="#666"
                 android:maxLines="1"
