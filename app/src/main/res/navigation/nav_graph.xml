@@ -10,4 +10,17 @@
         android:name="com.example.lab_8_player.fragment.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.example.lab_8_player.fragment.SearchFragment"
+        android:label="Search"
+        tools:layout="@layout/fragment_search"/>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.lab_8_player.fragment.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings"/>
+
 </navigation>

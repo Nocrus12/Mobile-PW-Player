@@ -82,11 +82,11 @@
             android:textColor="@color/white"/>
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/allTracksRecyclerView"
+            android:id="@+id/all_songs_recycler_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:overScrollMode="never"
             android:nestedScrollingEnabled="false"
-            tools:listitem="@layout/item_track" />
+            tools:listitem="@layout/item_song" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

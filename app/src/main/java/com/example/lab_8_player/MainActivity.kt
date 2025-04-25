@@ -5,32 +5,19 @@ import android.content.Intent
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import androidx.compose.material3.Button
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.example.lab_8_player.ui.theme.Lab_8_PlayerTheme
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUI
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val pickMusicFolder =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
@@ -55,6 +42,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_main)
+
+        val navView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        NavigationUI.setupWithNavController(navView, navController)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
@@ -94,38 +89,6 @@ class MainActivity : ComponentActivity() {
         } else {
             // No saved URI, prompt user to pick folder
             pickMusicFolder.launch(null)
-        }
-
-        setContent {
-            Lab_8_PlayerTheme {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Button(onClick = {
-                        val intent = Intent(applicationContext, PlaybackService::class.java).apply {
-                            action = "ACTION_START"
-                        }
-                        ContextCompat.startForegroundService(applicationContext, intent)
-                    }) {
-                        Text("Start Service")
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(onClick = {
-                        val intent = Intent(applicationContext, PlaybackService::class.java).apply {
-                            action = "ACTION_STOP"
-                        }
-                        ContextCompat.startForegroundService(applicationContext, intent)
-                    }) {
-                        Text("Stop Service")
-                    }
-                }
-            }
         }
     }
 }
