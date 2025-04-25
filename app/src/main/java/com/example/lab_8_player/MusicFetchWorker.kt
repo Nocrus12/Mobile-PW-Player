@@ -68,8 +68,15 @@ class MusicFetchWorker(
                 .orEmpty()
 
             if (songs.isNotEmpty()) {
-                songDao.insertSongs(songs)
+                val uniqueSongs = withContext(Dispatchers.IO) {
+                    songs.filterNot { songDao.existsByUri(it.uri) }
+                }
+
+                if (uniqueSongs.isNotEmpty()) {
+                    songDao.insertSongs(uniqueSongs)
+                }
             }
+
             Result.success()
         } catch (e: Exception) {
             e.printStackTrace()

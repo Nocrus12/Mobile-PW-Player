@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.lab_8_player.db.model.Song
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SongDao {
@@ -16,13 +15,16 @@ interface SongDao {
     suspend fun getAllSongs(): List<Song>
 
     @Query("SELECT * FROM Song WHERE id = :songId")
-    fun getSongById(songId: Long): Flow<Song?>
+    fun getSongById(songId: Long): Song?
 
     @Query("SELECT uri FROM Song")
     suspend fun getAllUris(): List<String>
 
     @Query("SELECT * FROM Song WHERE isFavorite = true")
     suspend fun getAllFavorites(): List<Song>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM Song WHERE uri = :uri)")
+    suspend fun existsByUri(uri: String): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSongs(songs: List<Song>)
