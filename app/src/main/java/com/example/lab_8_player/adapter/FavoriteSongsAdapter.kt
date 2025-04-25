@@ -33,9 +33,10 @@ class FavoriteSongsAdapter(private val context: Context, val songList: List<Song
 
         holder.itemView.setOnClickListener {
             val intent = Intent(context, PlaybackService::class.java).apply {
-                action = "ACTION_START"
-            }
-            ContextCompat.startForegroundService(context, intent)
+            action = "ACTION_PLAY"
+            putExtra("SONG_URI", song.uri)
+        }
+        ContextCompat.startForegroundService(context, intent)
         }
     }
 

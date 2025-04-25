@@ -64,6 +64,11 @@ class HomeFragment : Fragment() {
         allSongsRecyclerView.adapter = allSongsAdapter
 
         loadData()
+
+        val startIntent = Intent(context, PlaybackService::class.java).apply {
+            action = "ACTION_START"
+        }
+        ContextCompat.startForegroundService(context, startIntent)
     }
 
     private fun loadData() {
@@ -96,14 +101,6 @@ class HomeFragment : Fragment() {
             }
             allSongsAdapter.notifyDataSetChanged()
         }
-    }
-
-    private fun startPlaybackService(context: Context, song: Song) {
-        val intent = Intent(context, PlaybackService::class.java).apply {
-            action = "ACTION_START"
-            putExtra("SONG_URI", song.uri)
-        }
-        ContextCompat.startForegroundService(context, intent)
     }
 }
 
