@@ -88,6 +88,3 @@ class MusicFetchWorker(
         listOf("mp3", "wav", "ogg").any { fileName.endsWith(".$it", ignoreCase = true) }
 }
 
-// TODO Fix: DB input:
-//  song title (fetch from filename)
-//  artist ( ?: Unknown artist

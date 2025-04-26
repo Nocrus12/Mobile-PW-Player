@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 interface PlaylistDao {
 
     @Query("SELECT * FROM Playlist")
-    fun getAllPlaylists(): List<Playlist>
+    fun getAllPlaylists(): Flow<List<Playlist>>
 
     @Query("SELECT * FROM Playlist WHERE id = :playlistId")
     fun getPlaylistById(playlistId: Long): Playlist?

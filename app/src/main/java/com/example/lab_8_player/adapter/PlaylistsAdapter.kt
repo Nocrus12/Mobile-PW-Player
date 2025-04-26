@@ -6,17 +6,32 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.AsyncListDiffer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lab_8_player.R
 import com.example.lab_8_player.db.model.Playlist
 
-class PlaylistsAdapter(private val context: Context, val playlists: List<Playlist>) :
+class PlaylistsAdapter(private val context: Context) :
     RecyclerView.Adapter<PlaylistsAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val playlistCover: ImageView = view.findViewById(R.id.playlistCover)
         val playlistTitle: TextView = view.findViewById(R.id.playlistTitle)
     }
+
+    private val differCallback = object : DiffUtil.ItemCallback<Playlist>() {
+        override fun areItemsTheSame(oldItem: Playlist, newItem: Playlist): Boolean {
+            return oldItem.id == newItem.id &&
+                    oldItem.name == newItem.name
+        }
+
+        override fun areContentsTheSame(oldItem: Playlist, newItem: Playlist): Boolean {
+            return oldItem == newItem
+        }
+    }
+
+    val differ = AsyncListDiffer(this, differCallback)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -25,12 +40,12 @@ class PlaylistsAdapter(private val context: Context, val playlists: List<Playlis
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val playlist = playlists[position]
+        val playlist = differ.currentList[position]
         holder.playlistTitle.text = playlist.name
 
         // Placeholder image used, you can load real ones if needed
         holder.playlistCover.setImageResource(R.drawable.ic_playlist_placeholder)
     }
 
-    override fun getItemCount(): Int = playlists.size
+    override fun getItemCount(): Int = differ.currentList.size
 }
