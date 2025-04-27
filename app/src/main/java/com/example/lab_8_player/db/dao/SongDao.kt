@@ -30,8 +30,12 @@ interface SongDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSongs(songs: List<Song>)
 
-    @Update
-    suspend fun updateSong(song: Song)
+//    @Update
+//    suspend fun updateSong(song: Song)
+
+    @Query("UPDATE Song SET isFavorite = :isFavorite WHERE id = :songId")
+    suspend fun updateSong(songId: Long, isFavorite: Boolean)
+
 
     @Delete
     suspend fun deleteSong(song: Song)

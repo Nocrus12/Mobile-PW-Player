@@ -27,6 +27,8 @@ import com.example.lab_8_player.viewmodel.SongViewModel
 import com.example.lab_8_player.viewmodel.SongViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.app.AlertDialog.Builder
+import com.example.lab_8_player.db.model.Song
 
 class HomeFragment : Fragment() {
 
@@ -37,6 +39,9 @@ class HomeFragment : Fragment() {
     private lateinit var favoriteAdapter: FavoriteSongsAdapter
     private lateinit var playlistAdapter: PlaylistsAdapter
     private lateinit var allSongsAdapter: AllSongsAdapter
+
+    private lateinit var favoritesSection: View
+
 
     // Initialize database once
     private val db by lazy { AppDatabase.getInstance(requireContext().applicationContext) }
@@ -61,13 +66,16 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        favoritesSection = view.findViewById(R.id.favoritesSection)
+
         favoritesRecyclerView = view.findViewById(R.id.favoritesRecyclerView)
         playlistsRecyclerView = view.findViewById(R.id.playlistsRecyclerView)
         allSongsRecyclerView = view.findViewById(R.id.all_songs_recycler_view)
 
         favoriteAdapter = FavoriteSongsAdapter(requireContext())
-        playlistAdapter = PlaylistsAdapter(requireContext())
-        allSongsAdapter = AllSongsAdapter(requireContext())
+        playlistAdapter = PlaylistsAdapter(requireContext()) { showAddPlaylistDialog() }
+        allSongsAdapter = AllSongsAdapter(requireContext()) { song -> toggleFavorite(song) }
+
 
         favoritesRecyclerView.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -99,8 +107,12 @@ class HomeFragment : Fragment() {
                 launch {
                     songViewModel.getAllFavorites().collectLatest { favorites ->
                         favoriteAdapter.differ.submitList(favorites)
+
+                        // Hide favorites section if no favorites
+                        favoritesSection.visibility = if (favorites.isEmpty()) View.GONE else View.VISIBLE
                     }
                 }
+
                 launch {
                     playlistViewModel.getAllPlaylists().collectLatest { playlists ->
                         playlistAdapter.differ.submitList(playlists)
@@ -114,9 +126,40 @@ class HomeFragment : Fragment() {
             }
         }
     }
+
+    private fun showAddPlaylistDialog() {
+        val builder = Builder(requireContext())
+        builder.setTitle("Create New Playlist")
+
+        val input = android.widget.EditText(requireContext())
+        input.hint = "Playlist name"
+        builder.setView(input)
+
+        builder.setPositiveButton("Create") { dialog, _ ->
+            val playlistName = input.text.toString().trim()
+            if (playlistName.isNotEmpty()) {
+                playlistViewModel.insertPlaylist(playlistName)
+            }
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        builder.show()
+    }
+
+    private fun toggleFavorite(song: Song) {
+        songViewModel.updateFavorite(song.id, !song.isFavorite)
+    }
+
+
+
 }
 
 // TODO Fix: on init app start empty recyclers and no FG service. Fixes after switching pages/app restart
+// TODO Fix: Flow is not quite live (Flow emissions are viewed only after Homepage reloaded) on first app launch
 
 // TODO Make Favorites section view conditional (show if exist)
 // TODO Add button "Create playlist" which triggers Alert dialog window
@@ -125,3 +168,5 @@ class HomeFragment : Fragment() {
 //  Format duration ms to mm:ss
 //  Add button "Add to favorites"
 //  Add button "Add to playlist"
+
+// Recyclers works fine, live updates from Flow emissions are viewed instantly

@@ -16,7 +16,7 @@ class SongRepository(private val songDao: SongDao) {
 
     suspend fun insertSongs(songs: List<Song>) = songDao.insertSongs(songs)
 
-    suspend fun updateSong(song: Song) = songDao.updateSong(song)
+    suspend fun updateSong(songId: Long, isFavorite: Boolean) = songDao.updateSong(songId, isFavorite)
 
     suspend fun deleteSong(song: Song) = songDao.deleteSong(song)
 }

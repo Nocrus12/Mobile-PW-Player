@@ -21,9 +21,13 @@ class SongViewModel(app: Application, private val songRepository: SongRepository
         songRepository.insertSongs(songs)
     }
 
-    fun updateSong(song: Song) = viewModelScope.launch {
-        songRepository.updateSong(song)
+    fun updateFavorite(songId: Long, isFavorite: Boolean) {
+        viewModelScope.launch {
+            songRepository.updateSong(songId, isFavorite)
+        }
     }
+
+
 
     fun deleteSong(song: Song) = viewModelScope.launch {
         songRepository.deleteSong(song)

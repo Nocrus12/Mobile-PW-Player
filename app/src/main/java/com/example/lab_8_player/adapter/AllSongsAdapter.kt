@@ -5,6 +5,7 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.AsyncListDiffer
@@ -14,13 +15,16 @@ import com.example.lab_8_player.R
 import com.example.lab_8_player.db.model.Song
 import com.example.lab_8_player.PlaybackService
 
-class AllSongsAdapter(private val context: Context) :
-    RecyclerView.Adapter<AllSongsAdapter.ViewHolder>() {
+class AllSongsAdapter(
+    private val context: Context,
+    private val onFavoriteClick: (Song) -> Unit // <-- callback
+) : RecyclerView.Adapter<AllSongsAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val songTitle: TextView = view.findViewById(R.id.textTrackTitle)
         val songArtist: TextView = view.findViewById(R.id.textTrackArtist)
         val songDuration: TextView = view.findViewById(R.id.textTrackDuration)
+        val btnFavorite: ImageButton = view.findViewById(R.id.btnFavorite)
     }
 
     private val differCallback = object : DiffUtil.ItemCallback<Song>() {
@@ -29,8 +33,11 @@ class AllSongsAdapter(private val context: Context) :
         }
 
         override fun areContentsTheSame(oldItem: Song, newItem: Song): Boolean {
-            return oldItem == newItem
+            return oldItem.isFavorite == newItem.isFavorite &&
+                    oldItem.name == newItem.name &&
+                    oldItem.artist == newItem.artist
         }
+
     }
 
     val differ = AsyncListDiffer(this, differCallback)
@@ -43,16 +50,30 @@ class AllSongsAdapter(private val context: Context) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val song = differ.currentList[position]
+
         holder.songTitle.text = song.name
         holder.songArtist.text = song.artist
         holder.songDuration.text = song.duration.toString()
 
+        // Set icon based on favorite status
+        if (song.isFavorite) {
+            holder.btnFavorite.setImageResource(R.drawable.baseline_favorite_24)
+        } else {
+            holder.btnFavorite.setImageResource(R.drawable.baseline_favorite_border_24)
+        }
+
+        // Clicking on song -> Play
         holder.itemView.setOnClickListener {
             val intent = Intent(context, PlaybackService::class.java).apply {
                 action = "ACTION_PLAY"
                 putExtra("SONG_URI", song.uri)
             }
             ContextCompat.startForegroundService(context, intent)
+        }
+
+        // Clicking on heart button -> Toggle favorite
+        holder.btnFavorite.setOnClickListener {
+            onFavoriteClick(song)
         }
     }
 

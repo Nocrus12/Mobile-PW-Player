@@ -11,9 +11,12 @@ class PlaylistViewModel(app: Application, private val playlistRepository: Playli
 
     fun getAllPlaylists() = playlistRepository.getAllPlaylists()
 
-    fun insertPlaylist(playlist: Playlist) = viewModelScope.launch {
-        playlistRepository.insertPlaylist(playlist)
+    fun insertPlaylist(name: String) {
+        viewModelScope.launch {
+            playlistRepository.insertPlaylist(Playlist(name = name))
+        }
     }
+
 
     fun updatePlaylist(playlist: Playlist) = viewModelScope.launch {
         playlistRepository.updatePlaylist(playlist)

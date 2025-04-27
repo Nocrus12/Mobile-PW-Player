@@ -13,27 +13,36 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Favorites Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Favorites"
-            android:textSize="36sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="16dp"
-            android:textColor="@color/white"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/favoritesRecyclerView"
+        <LinearLayout
+            android:id="@+id/favoritesSection"
             android:layout_width="match_parent"
-            android:layout_height="128dp"
-            android:overScrollMode="never"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            android:scrollbars="none"
-            tools:listitem="@layout/item_favorite_song" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible"> <!-- default visible -->
+
+            <!-- Favorites Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Favorites"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/white"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/favoritesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="128dp"
+                android:overScrollMode="never"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:scrollbars="none"
+                tools:listitem="@layout/item_favorite_song" />
+
+        </LinearLayout>
 
         <!-- Playlists Section -->
         <TextView
