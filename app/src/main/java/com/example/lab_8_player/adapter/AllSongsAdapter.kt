@@ -17,7 +17,8 @@ import com.example.lab_8_player.PlaybackService
 
 class AllSongsAdapter(
     private val context: Context,
-    private val onFavoriteClick: (Song) -> Unit // <-- callback
+    private val onFavoriteClick: (Song) -> Unit,
+    private val onAddToPlaylistClick: (Song) -> Unit
 ) : RecyclerView.Adapter<AllSongsAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -25,6 +26,7 @@ class AllSongsAdapter(
         val songArtist: TextView = view.findViewById(R.id.textTrackArtist)
         val songDuration: TextView = view.findViewById(R.id.textTrackDuration)
         val btnFavorite: ImageButton = view.findViewById(R.id.btnFavorite)
+        val btnAddToPlaylist: ImageButton = view.findViewById(R.id.btnAddToPlaylist)
     }
 
     private val differCallback = object : DiffUtil.ItemCallback<Song>() {
@@ -74,6 +76,11 @@ class AllSongsAdapter(
         // Clicking on heart button -> Toggle favorite
         holder.btnFavorite.setOnClickListener {
             onFavoriteClick(song)
+        }
+
+        // Clicking on add to playlist button
+        holder.btnAddToPlaylist.setOnClickListener {
+            onAddToPlaylistClick(song)
         }
     }
 

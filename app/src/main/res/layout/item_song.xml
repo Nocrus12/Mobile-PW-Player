@@ -20,7 +20,7 @@
             android:padding="12dp">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="240dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:id="@+id/songInfo"
@@ -62,6 +62,18 @@
                 android:background="@android:color/transparent"
                 android:contentDescription="Favorite"
                 android:src="@drawable/baseline_favorite_border_24" />
+
+            <ImageButton
+                android:id="@+id/btnAddToPlaylist"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="48dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Add to Playlist"
+                android:src="@drawable/baseline_playlist_add_24" />
+
 
         </RelativeLayout>
 

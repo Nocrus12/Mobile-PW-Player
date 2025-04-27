@@ -28,7 +28,12 @@ import com.example.lab_8_player.viewmodel.SongViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.app.AlertDialog.Builder
+import com.example.lab_8_player.db.model.PlaylistSongCrossRef
 import com.example.lab_8_player.db.model.Song
+import com.example.lab_8_player.repository.PlaylistSongCrossRefRepository
+import com.example.lab_8_player.viewmodel.PlaylistSongCrossRefViewModel
+import com.example.lab_8_player.viewmodel.PlaylistSongCrossRefViewModelFactory
+import kotlinx.coroutines.flow.firstOrNull
 
 class HomeFragment : Fragment() {
 
@@ -54,6 +59,9 @@ class HomeFragment : Fragment() {
     private val playlistViewModel: PlaylistViewModel by viewModels {
         PlaylistViewModelFactory(requireActivity().application, PlaylistRepository(db.playlistDao()))
     }
+    private val playlistSongCrossRefViewModel: PlaylistSongCrossRefViewModel by viewModels {
+        PlaylistSongCrossRefViewModelFactory(requireActivity().application, PlaylistSongCrossRefRepository(db.playlistSongCrossRefDao()))
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -74,8 +82,10 @@ class HomeFragment : Fragment() {
 
         favoriteAdapter = FavoriteSongsAdapter(requireContext())
         playlistAdapter = PlaylistsAdapter(requireContext()) { showAddPlaylistDialog() }
-        allSongsAdapter = AllSongsAdapter(requireContext()) { song -> toggleFavorite(song) }
-
+        allSongsAdapter = AllSongsAdapter(requireContext(),
+            onFavoriteClick = { song -> toggleFavorite(song) },
+            onAddToPlaylistClick = { song -> showAddToPlaylistDialog(song) }
+        )
 
         favoritesRecyclerView.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -149,6 +159,62 @@ class HomeFragment : Fragment() {
 
         builder.show()
     }
+
+    private fun showAddToPlaylistDialog(song: Song) {
+        val builder = Builder(requireContext())
+        builder.setTitle("Add to Playlist")
+
+        // Collect playlists asynchronously from Flow
+        lifecycleScope.launch {
+            val playlists = playlistViewModel.getAllPlaylists().firstOrNull() ?: emptyList()
+            val playlistNames = playlists.map { it.name } // Extract playlist names
+
+            // Fetch the cross-references (playlist-song relationships) for the song
+            val existingCrossRefs = playlistSongCrossRefViewModel.getCrossRefsForSong(song.id)
+
+            // Create an array to keep track of checked states for each playlist
+            val checkedItems = BooleanArray(playlistNames.size)
+
+            // Mark the checkboxes that are already associated with the song
+            playlists.forEachIndexed { index, playlist ->
+                checkedItems[index] = existingCrossRefs.any { it.playlistId == playlist.id }
+            }
+
+            // Show the multi-choice dialog
+            builder.setMultiChoiceItems(playlistNames.toTypedArray(), checkedItems) { _, index, isChecked ->
+                if (isChecked) {
+                    // Add the song to the playlist
+                    val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
+                    lifecycleScope.launch {
+                        playlistSongCrossRefViewModel.insertCrossRef(crossRef)
+                    }
+                } else {
+                    // Remove the song from the playlist
+                    val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
+                    lifecycleScope.launch {
+                        playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                    }
+                }
+            }
+
+            builder.setPositiveButton("Add") { dialog, _ ->
+                // You can add any final operations here if needed before dismissing
+                dialog.dismiss()
+            }
+
+            builder.setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+
+            builder.show()
+        }
+    }
+
+
+
+
+
+
 
     private fun toggleFavorite(song: Song) {
         songViewModel.updateFavorite(song.id, !song.isFavorite)
