@@ -14,7 +14,8 @@ import com.example.lab_8_player.db.model.Playlist
 
 class PlaylistsAdapter(
     private val context: Context,
-    private val onAddPlaylistClicked: () -> Unit // <-- callback for Add button
+    private val onAddPlaylistClicked: () -> Unit, // <-- callback for Add button
+    private val onPlaylistClicked: (playlistId: Long) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -62,6 +63,10 @@ class PlaylistsAdapter(
             val playlist = differ.currentList[position]
             holder.playlistTitle.text = playlist.name
             holder.playlistCover.setImageResource(R.drawable.ic_playlist_placeholder)
+
+            holder.itemView.setOnClickListener {
+                onPlaylistClicked(playlist.id) // <-- Pass playlistId
+            }
         } else if (holder is AddButtonViewHolder) {
             holder.itemView.setOnClickListener {
                 onAddPlaylistClicked()

@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.example.lab_8_player.db.model.PlaylistSongCrossRef
 import com.example.lab_8_player.db.model.PlaylistWithSongs
+import com.example.lab_8_player.db.model.Song
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -31,4 +32,13 @@ interface PlaylistSongCrossRefDao {
         WHERE id = :playlistId
     """)
     fun getPlaylistWithSongs(playlistId: Long): Flow<PlaylistWithSongs>
+
+    @Transaction
+    @Query("""
+    SELECT * FROM PlaylistSongCrossRef
+    INNER JOIN Song ON PlaylistSongCrossRef.songId = Song.id
+    WHERE PlaylistSongCrossRef.playlistId = :playlistId
+    """)
+    fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>>
+
 }

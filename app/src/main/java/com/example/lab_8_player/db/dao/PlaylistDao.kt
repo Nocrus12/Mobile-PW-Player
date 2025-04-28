@@ -16,7 +16,7 @@ interface PlaylistDao {
     fun getAllPlaylists(): Flow<List<Playlist>>
 
     @Query("SELECT * FROM Playlist WHERE id = :playlistId")
-    fun getPlaylistById(playlistId: Long): Playlist?
+    fun getPlaylistById(playlistId: Long): Flow<Playlist>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylist(playlist: Playlist)
