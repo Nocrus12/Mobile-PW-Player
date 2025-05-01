@@ -77,6 +77,12 @@ class SearchFragment : Fragment() {
         binding.searchInput.addTextChangedListener { editable ->
             val query = editable.toString()
             searchJob?.cancel()
+
+            if (query.isEmpty()) {
+                adapter.differ.submitList(emptyList())
+                return@addTextChangedListener
+            }
+
             searchJob = lifecycleScope.launch {
                 songViewModel.getSongsByName(query).collectLatest { songs ->
                     adapter.differ.submitList(songs)
