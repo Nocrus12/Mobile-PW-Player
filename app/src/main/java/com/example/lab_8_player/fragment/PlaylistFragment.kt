@@ -3,13 +3,17 @@ package com.example.lab_8_player.fragment
 import android.app.AlertDialog.Builder
 import android.content.Intent
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.repeatOnLifecycle
@@ -38,6 +42,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.ArrayList
+import androidx.core.view.MenuProvider
+import androidx.core.view.MenuHost
 
 class PlaylistFragment : Fragment() {
 
@@ -65,7 +71,7 @@ class PlaylistFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentPlaylistBinding.inflate(inflater, container, false)
         return binding.root
@@ -89,14 +95,84 @@ class PlaylistFragment : Fragment() {
             adapter = allSongsAdapter
         }
 
+        // Load data
         observeSongs()
 
         view.findViewById<View>(R.id.btnBackToHome)?.setOnClickListener {
             findNavController().navigateUp()
         }
-        view.findViewById<View>(R.id.btnPlayPlaylist)?.setOnClickListener {
-            playPlaylist()
+
+        // "Play Playlist" button
+        binding.btnPlayPlaylist.setOnClickListener {
+
+            if (!playlistSongs.isEmpty()) {
+                val intent = Intent(context, PlaybackService::class.java).apply {
+                    action = "ACTION_BEGIN"
+                    putParcelableArrayListExtra("EXTRA_SONG_LIST", ArrayList(playlistSongs))
+                    putExtra("EXTRA_PLAY_INDEX", 0)
+                }
+                ContextCompat.startForegroundService(requireContext(), intent)
+            }
         }
+
+        // Dropdown menu
+        binding.btnPlaylistMenu.setOnClickListener { view ->
+            val popupMenu = PopupMenu(requireContext(), view)
+            popupMenu.menuInflater.inflate(R.menu.playlist_menu, popupMenu.menu)
+
+            popupMenu.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_rename -> {
+                        showRenameDialog()
+                        true
+                    }
+                    R.id.action_delete -> {
+                        showDeleteConfirmation()
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+            popupMenu.show()
+        }
+    }
+
+    private fun showRenameDialog() {
+        val editText = android.widget.EditText(requireContext()).apply {
+            setText(playlist.name)
+            selectAll()
+        }
+
+        Builder(requireContext())
+            .setTitle("Rename Playlist")
+            .setView(editText)
+            .setPositiveButton("OK") { dialog, _ ->
+                val newName = editText.text.toString().trim()
+                if (newName.isNotEmpty() && newName != playlist.name) {
+                    // updateViewModel
+                    playlistViewModel.updatePlaylist(
+                        playlist.copy(name = newName)
+                    )
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showDeleteConfirmation() {
+        Builder(requireContext())
+            .setTitle("Delete Playlist?")
+            .setMessage("This will remove the playlist but keep the songs. Are you sure?")
+            .setPositiveButton("Delete") { dialog, _ ->
+                playlistViewModel.deletePlaylist(playlist)
+                dialog.dismiss()
+                // navigate back to home
+                findNavController().navigateUp()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun observeSongs() {
@@ -107,6 +183,13 @@ class PlaylistFragment : Fragment() {
                 playlistSongCrossRefViewModel.getSongsForPlaylist(playlistId).collectLatest { songs ->
                     playlistSongs = songs
                     allSongsAdapter.differ.submitList(songs)
+
+                    binding.tvSongCount.text = "${songs.size} song${if (songs.size == 1) "" else "s"}"
+
+                    val totalMs = songs.sumOf { it.duration.toLong() }
+                    val minutes = (totalMs / 1000 / 60)
+                    val seconds = (totalMs / 1000 % 60)
+                    binding.tvTotalDuration.text = String.format("%d:%02d", minutes, seconds)
                 }
             }
         }
@@ -114,20 +197,9 @@ class PlaylistFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             playlistViewModel.getPlaylistById(playlistId).collectLatest { loadedPlaylist ->
                 playlist = loadedPlaylist
-                binding.playlist = loadedPlaylist // This sets the data binding variable
+                binding.playlist = loadedPlaylist
             }
         }
-    }
-
-    private fun playPlaylist() {
-        if (playlistSongs.isEmpty()) return
-
-        Intent(context, PlaybackService::class.java).apply {
-            action = "ACTION_BEGIN"
-            putParcelableArrayListExtra("SONG_LIST", playlistSongs as ArrayList<out Parcelable?>?)
-            putExtra("PLAY_INDEX", 0)
-        }.also { ContextCompat.startForegroundService(requireContext(), it) }
-
     }
 
 

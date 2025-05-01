@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
+
         <variable
             name="playlist"
             type="com.example.lab_8_player.db.model.Playlist" />
@@ -19,11 +22,11 @@
 
             <ImageButton
                 android:id="@+id/btnBackToHome"
-                android:layout_width="32dp"
-                android:layout_height="wrap_content"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_margin="20dp"
                 android:src="@drawable/baseline_arrow_back"
-                android:background="@null"/>
+                android:background="@null" />
 
             <TextView
                 android:id="@+id/playlistTitle"
@@ -33,23 +36,63 @@
                 android:textSize="36sp"
                 android:textStyle="bold"
                 android:layout_marginTop="16dp"
-                android:textColor="@color/white"/>
+                android:textColor="@color/white" />
 
         </LinearLayout>
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="80dp">
 
             <ImageButton
                 android:id="@+id/btnPlayPlaylist"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="20dp"
+                android:background="@null"
+                android:scaleType="fitXY"
+                android:src="@drawable/baseline_play_arrow_24_white"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvSongCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_play"
-                android:layout_margin="16dp"
-                android:background="@null"/>
+                android:layout_marginTop="20dp"
+                android:layout_marginLeft="20dp"
+                android:text="0 songs"
+                android:textColor="#646464"
+                android:textSize="14sp"
+                app:layout_constraintStart_toEndOf="@id/btnPlayPlaylist"
+                app:layout_constraintTop_toTopOf="parent"
+                android:singleLine="true"/>
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/tvTotalDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="00:00"
+                android:textColor="#646464"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="@id/tvSongCount"
+                app:layout_constraintTop_toBottomOf="@id/tvSongCount"
+                android:singleLine="true"/>
+
+            <ImageButton
+                android:id="@+id/btnPlaylistMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="20dp"
+                android:background="@null"
+                android:scaleType="fitXY"
+                android:src="@drawable/baseline_more_vert_24"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/songsRecyclerView"
