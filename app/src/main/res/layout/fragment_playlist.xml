@@ -37,6 +37,20 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp">
+
+            <ImageButton
+                android:id="@+id/btnPlayPlaylist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_play"
+                android:layout_margin="16dp"
+                android:background="@null"/>
+
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/songsRecyclerView"
             android:layout_width="match_parent"

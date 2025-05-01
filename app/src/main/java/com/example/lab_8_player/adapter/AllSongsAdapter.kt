@@ -66,9 +66,11 @@ class AllSongsAdapter(
 
         // Clicking on song -> Play
         holder.itemView.setOnClickListener {
+            val fullList = ArrayList(differ.currentList)
             val intent = Intent(context, PlaybackService::class.java).apply {
-                action = "ACTION_PLAY"
-                putExtra("SONG_URI", song.uri)
+                action = "ACTION_BEGIN"
+                putParcelableArrayListExtra("EXTRA_SONG_LIST", fullList)
+                putExtra("EXTRA_PLAY_INDEX", holder.adapterPosition)
             }
             ContextCompat.startForegroundService(context, intent)
         }

@@ -48,6 +48,9 @@ class HomeFragment : Fragment() {
 
     private lateinit var favoritesSection: View
 
+    private var currentSongList: List<Song> = emptyList()
+
+
 
     // Initialize database once
     private val db by lazy { AppDatabase.getInstance(requireContext().applicationContext) }
@@ -109,11 +112,6 @@ class HomeFragment : Fragment() {
         }
 
         observeData()
-
-        val startIntent = Intent(context, PlaybackService::class.java).apply {
-            action = "ACTION_START"
-        }
-        context?.let { ContextCompat.startForegroundService(it, startIntent) }
     }
 
     private fun observeData() {
@@ -136,6 +134,7 @@ class HomeFragment : Fragment() {
                 }
                 launch {
                     songViewModel.getAllSongs().collectLatest { allSongs ->
+                        currentSongList = allSongs
                         allSongsAdapter.differ.submitList(allSongs)
                     }
                 }

@@ -3,6 +3,7 @@ package com.example.lab_8_player.fragment
 import android.app.AlertDialog.Builder
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +27,7 @@ import com.example.lab_8_player.viewmodel.SongViewModel
 import com.example.lab_8_player.viewmodel.SongViewModelFactory
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.lab_8_player.databinding.FragmentPlaylistBinding
 import com.example.lab_8_player.db.model.Playlist
 import com.example.lab_8_player.db.model.PlaylistSongCrossRef
 import com.example.lab_8_player.db.model.Song
@@ -35,13 +37,16 @@ import com.example.lab_8_player.viewmodel.PlaylistViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import java.util.ArrayList
 
 class PlaylistFragment : Fragment() {
 
     private lateinit var songsRecyclerView: RecyclerView
     private lateinit var allSongsAdapter: AllSongsAdapter
     private lateinit var playlist: Playlist
+    private lateinit var binding: FragmentPlaylistBinding
 
+    private lateinit var playlistSongs: List<Song>
 
     private val db by lazy { AppDatabase.getInstance(requireContext().applicationContext) }
 
@@ -62,7 +67,8 @@ class PlaylistFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_playlist, container, false)
+        binding = FragmentPlaylistBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -88,11 +94,9 @@ class PlaylistFragment : Fragment() {
         view.findViewById<View>(R.id.btnBackToHome)?.setOnClickListener {
             findNavController().navigateUp()
         }
-
-        val startIntent = Intent(context, PlaybackService::class.java).apply {
-            action = "ACTION_START"
+        view.findViewById<View>(R.id.btnPlayPlaylist)?.setOnClickListener {
+            playPlaylist()
         }
-        context?.let { ContextCompat.startForegroundService(it, startIntent) }
     }
 
     private fun observeSongs() {
@@ -101,18 +105,31 @@ class PlaylistFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(STARTED) {
                 playlistSongCrossRefViewModel.getSongsForPlaylist(playlistId).collectLatest { songs ->
+                    playlistSongs = songs
                     allSongsAdapter.differ.submitList(songs)
                 }
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Fetch the playlist first
             playlistViewModel.getPlaylistById(playlistId).collectLatest { loadedPlaylist ->
-                playlist = loadedPlaylist   // Save it
+                playlist = loadedPlaylist
+                binding.playlist = loadedPlaylist // This sets the data binding variable
             }
         }
     }
+
+    private fun playPlaylist() {
+        if (playlistSongs.isEmpty()) return
+
+        Intent(context, PlaybackService::class.java).apply {
+            action = "ACTION_BEGIN"
+            putParcelableArrayListExtra("SONG_LIST", playlistSongs as ArrayList<out Parcelable?>?)
+            putExtra("PLAY_INDEX", 0)
+        }.also { ContextCompat.startForegroundService(requireContext(), it) }
+
+    }
+
 
     private fun toggleFavorite(song: Song) {
         songViewModel.updateFavorite(song.id, !song.isFavorite)
