@@ -18,6 +18,9 @@ interface SongDao {
     @Query("SELECT * FROM song WHERE id IN (:ids)")
     suspend fun getSongsByIds(ids: List<Int>): List<Song>
 
+    @Query("SELECT * FROM Song WHERE name LIKE '%' || :nameInput || '%'")
+    fun getSongsByName(nameInput: String): Flow<List<Song>>
+
     @Query("SELECT uri FROM Song")
     suspend fun getAllUris(): List<String>
 

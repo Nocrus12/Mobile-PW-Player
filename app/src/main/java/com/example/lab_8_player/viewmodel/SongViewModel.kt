@@ -13,6 +13,8 @@ class SongViewModel(app: Application, private val songRepository: SongRepository
 
     fun getAllFavorites() = songRepository.getAllFavorites()
 
+    fun getSongsByName(nameInput: String) = songRepository.getSongsByName(nameInput)
+
     suspend fun getAllUris() = songRepository.getAllUris()
 
     suspend fun existsByUri(uri: String) = songRepository.existsByUri(uri)
