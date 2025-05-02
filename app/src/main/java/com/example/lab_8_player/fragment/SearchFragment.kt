@@ -80,12 +80,14 @@ class SearchFragment : Fragment() {
 
             if (query.isEmpty()) {
                 adapter.differ.submitList(emptyList())
+                binding.textNoResults.visibility = View.GONE
                 return@addTextChangedListener
             }
 
             searchJob = lifecycleScope.launch {
                 songViewModel.getSongsByName(query).collectLatest { songs ->
                     adapter.differ.submitList(songs)
+                    binding.textNoResults.visibility = if (songs.isEmpty()) View.VISIBLE else View.GONE
                 }
             }
         }

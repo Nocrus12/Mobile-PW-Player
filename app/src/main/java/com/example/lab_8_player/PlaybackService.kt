@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import com.example.lab_8_player.db.model.Song
 import androidx.core.net.toUri
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class PlaybackService : Service() {
 
@@ -29,62 +30,57 @@ class PlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-//            "ACTION_START" -> {
-//                val songs = intent.getParcelableArrayListExtra("SONG_LIST", Song::class.java) ?: return START_STICKY
-//                val newTrackList = songs.toList()
-//
-//                if (!::mediaPlayer.isInitialized || newTrackList != trackList) {
-//                    // Restart playback with new list
-//
-//                    trackList = newTrackList
-//                    currentTrackIndex = 0
-//                    initMediaPlayer()
-//                }
-//            }
 
-//            "ACTION_PLAY" -> {
-//                val uri = intent.getStringExtra("SONG_URI")?.toUri()
-//                uri?.let {
-//                    val index = trackList.indexOfFirst { song -> song.uri.toUri() == it }.takeIf { it >= 0 } ?: 0
-//                    playAt(index)
-//                } ?: run {
-//                    // fallback: resume playback if already initialized
-//                    if (::mediaPlayer.isInitialized && !mediaPlayer.isPlaying) {
-//                        mediaPlayer.start()
-//                    }
-//                }
-//            }
-
-            "ACTION_BEGIN" -> {
-                val songs = intent.getParcelableArrayListExtra("EXTRA_SONG_LIST", Song::class.java)
-                    ?: return START_STICKY
-                val index = intent.getIntExtra("EXTRA_PLAY_INDEX", 0)
-                // always restart if list or index differ
-                if (songs != trackList || index != currentTrackIndex) {
-                    if (::mediaPlayer.isInitialized) { mediaPlayer.stop() }
-                    trackList = songs
-                    playAt(index)
-                }
-            }
-
-
-            "ACTION_PAUSE" -> {
-                if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
-                    mediaPlayer.pause()
-                }
-            }
-            "ACTION_NEXT" -> nextTrack()
-            "ACTION_PREVIOUS" -> previousTrack()
-            "ACTION_STOP" -> {
-                if (::mediaPlayer.isInitialized) {
-                    mediaPlayer.stop()
-                    stopSelf()
-                }
-            }
+            "ACTION_BEGIN"  -> handleBegin(intent)
+            "ACTION_PAUSE"  -> pauseAndBroadcast()
+            "ACTION_RESUME" -> resumeAndBroadcast()
+            "ACTION_NEXT"   -> nextTrack()
+            "ACTION_PREV"   -> previousTrack()
+            "ACTION_STOP"   -> stop()
         }
 
         startForeground(NOTIF_ID, createNotification())
         return START_STICKY
+    }
+
+    private fun handleBegin(intent: Intent) {
+        val songs = intent.getParcelableArrayListExtra("EXTRA_SONG_LIST", Song::class.java)
+            ?: return
+        val index = intent.getIntExtra("EXTRA_PLAY_INDEX", 0)
+        // always restart if list or index differ
+        if (songs != trackList || index != currentTrackIndex) {
+            if (::mediaPlayer.isInitialized) { mediaPlayer.stop() }
+            trackList = songs
+            playAt(index)
+        }
+        broadcastState()
+
+        val prefs = getSharedPreferences("playback_prefs", MODE_PRIVATE)
+        val uris = songs.joinToString("|") { it.uri }  // pipe-separated list of URIs
+        prefs.edit()
+            .putString("last_playlist_uris", uris)
+            .putInt("last_index", index)
+            .apply()
+    }
+
+    private fun stop() {
+        if (::mediaPlayer.isInitialized) {
+            mediaPlayer.stop()
+            stopSelf()
+            broadcastState()
+        }
+    }
+
+    private fun resumeAndBroadcast() {
+        if (::mediaPlayer.isInitialized && !mediaPlayer.isPlaying) mediaPlayer.start()
+        broadcastState()
+    }
+
+    private fun pauseAndBroadcast() {
+        if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
+            mediaPlayer.pause()
+        }
+        broadcastState()
     }
 
     private fun initMediaPlayer() {
@@ -96,6 +92,7 @@ class PlaybackService : Service() {
             prepare()
             setOnCompletionListener { nextTrack() }
         }
+        broadcastState()
     }
 
     private fun nextTrack() {
@@ -105,6 +102,7 @@ class PlaybackService : Service() {
         currentTrackIndex = (currentTrackIndex + 1) % trackList.size
         initMediaPlayer()
         mediaPlayer.start()
+        broadcastState()
     }
 
     private fun previousTrack() {
@@ -115,6 +113,7 @@ class PlaybackService : Service() {
             if (currentTrackIndex - 1 < 0) trackList.lastIndex else currentTrackIndex - 1
         initMediaPlayer()
         mediaPlayer.start()
+        broadcastState()
     }
 
     override fun onDestroy() {
@@ -128,7 +127,8 @@ class PlaybackService : Service() {
     private fun createNotification(): Notification {
         val isPlaying = ::mediaPlayer.isInitialized && mediaPlayer.isPlaying
         val playPauseIcon = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-        val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_PLAY"
+        val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_RESUME"
+
 
         val playPausePI = PendingIntent.getService(this, 0, Intent(this, PlaybackService::class.java).apply {
             action = playPauseAction
@@ -179,4 +179,16 @@ class PlaybackService : Service() {
         initMediaPlayer()
         mediaPlayer.start()
     }
+
+    private fun broadcastState() {
+        val song = trackList.getOrNull(currentTrackIndex)
+        val intent = Intent("PLAYBACK_STATE_CHANGED").apply {
+            putExtra("title", song?.name)
+            putExtra("artist", song?.artist)
+            putExtra("isPlaying", mediaPlayer.isPlaying)
+        }
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+    }
+
+
 }
