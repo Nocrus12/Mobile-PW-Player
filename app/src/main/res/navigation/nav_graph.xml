@@ -38,5 +38,10 @@
             android:name="playlistId"
             app:argType="long" />
     </fragment>
+    <fragment
+        android:id="@+id/miniPlayerFragment"
+        android:name="com.example.lab_8_player.fragment.MiniPlayerFragment"
+        android:label="fragment_mini_player"
+        tools:layout="@layout/fragment_mini_player" />
 
 </navigation>

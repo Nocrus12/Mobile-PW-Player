@@ -8,7 +8,9 @@ import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import com.example.lab_8_player.db.model.Song
@@ -37,6 +39,14 @@ class PlaybackService : Service() {
             "ACTION_NEXT"   -> nextTrack()
             "ACTION_PREV"   -> previousTrack()
             "ACTION_STOP"   -> stop()
+            "ACTION_SEEK" -> {
+                val to = intent.getIntExtra("EXTRA_SEEK_TO", 0)
+                if (::mediaPlayer.isInitialized) {
+                    mediaPlayer.seekTo(to)
+                    broadcastState()   // so UI & notification both update
+                }
+            }
+
         }
 
         startForeground(NOTIF_ID, createNotification())
@@ -68,12 +78,16 @@ class PlaybackService : Service() {
             mediaPlayer.stop()
             stopSelf()
             broadcastState()
+            updateHandler.removeCallbacks(updateRunnable)
         }
     }
 
     private fun resumeAndBroadcast() {
         if (::mediaPlayer.isInitialized && !mediaPlayer.isPlaying) mediaPlayer.start()
         broadcastState()
+
+        updateHandler.removeCallbacks(updateRunnable) // just in case…
+        updateHandler.postDelayed(updateRunnable, 500)
     }
 
     private fun pauseAndBroadcast() {
@@ -81,6 +95,7 @@ class PlaybackService : Service() {
             mediaPlayer.pause()
         }
         broadcastState()
+        updateHandler.removeCallbacks(updateRunnable)
     }
 
     private fun initMediaPlayer() {
@@ -135,7 +150,7 @@ class PlaybackService : Service() {
         }, PendingIntent.FLAG_IMMUTABLE)
 
         val prevPI = PendingIntent.getService(this, 1, Intent(this, PlaybackService::class.java).apply {
-            action = "ACTION_PREVIOUS"
+            action = "ACTION_PREV"
         }, PendingIntent.FLAG_IMMUTABLE)
 
         val nextPI = PendingIntent.getService(this, 2, Intent(this, PlaybackService::class.java).apply {
@@ -178,14 +193,31 @@ class PlaybackService : Service() {
         currentTrackIndex = index
         initMediaPlayer()
         mediaPlayer.start()
+        broadcastState()
+        updateHandler.postDelayed(updateRunnable, 500)
+    }
+
+    private val updateHandler = Handler(Looper.getMainLooper())
+    private val updateRunnable = object : Runnable {
+        override fun run() {
+            if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
+                broadcastState()
+                updateHandler.postDelayed(this, 500)
+            }
+        }
     }
 
     private fun broadcastState() {
         val song = trackList.getOrNull(currentTrackIndex)
+        val pos = mediaPlayer.currentPosition
+        val dur = mediaPlayer.duration
         val intent = Intent("PLAYBACK_STATE_CHANGED").apply {
             putExtra("title", song?.name)
             putExtra("artist", song?.artist)
             putExtra("isPlaying", mediaPlayer.isPlaying)
+            putExtra("position", pos)
+            putExtra("duration", dur)
+            putExtra("songId",  song!!.id)
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }

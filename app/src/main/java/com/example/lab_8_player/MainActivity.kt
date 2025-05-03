@@ -3,22 +3,14 @@ package com.example.lab_8_player
 
 import android.content.Intent
 import android.Manifest
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import android.net.Uri
-import android.view.View
-import android.widget.ImageButton
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -26,20 +18,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var receiver: BroadcastReceiver
-
-    // Keeps the last known playback state
-    private var isPlaying = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
-        val miniPlayer: View = findViewById(R.id.mini_player)
-        miniPlayer.visibility = View.GONE
-
-
+        // Setting up navigation
         val navView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -56,6 +40,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Setting up and checking Shared Preferences
         val savedUri = getSharedPreferences("music_prefs", MODE_PRIVATE)
             .getString("music_folder_uri", null)
 
@@ -85,58 +70,9 @@ class MainActivity : AppCompatActivity() {
             // No saved URI, prompt user to pick folder
             pickMusicFolder.launch(null)
         }
-
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context, intent: Intent) {
-                // Read out the new state
-                val title = intent.getStringExtra("title") ?: ""
-                val artist = intent.getStringExtra("artist") ?: ""
-                isPlaying = intent.getBooleanExtra("isPlaying", false)
-
-                miniPlayer.visibility = View.VISIBLE
-
-                // Update mini-player UI
-                findViewById<TextView>(R.id.miniTitle).text = title
-                findViewById<TextView>(R.id.miniArtist).text = artist
-                findViewById<ImageButton>(R.id.btnPlayPause).setImageResource(
-                    if (isPlaying) R.drawable.baseline_pause_24_white else R.drawable.baseline_play_arrow_24_white
-                )
-            }
-        }
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(receiver, IntentFilter("PLAYBACK_STATE_CHANGED"))
-
-        // 2) Wire up the mini-player buttons
-
-        // Play / Pause toggle
-        findViewById<ImageButton>(R.id.btnPlayPause).setOnClickListener {
-            val action = if (isPlaying) "ACTION_PAUSE" else "ACTION_RESUME"
-            ContextCompat.startForegroundService(
-                this,
-                Intent(this, PlaybackService::class.java).setAction(action)
-            )
-
-        }
-
-        // Previous
-        findViewById<ImageButton>(R.id.btnPrev).setOnClickListener {
-            ContextCompat.startForegroundService(
-                this,
-                Intent(this, PlaybackService::class.java).setAction("ACTION_PREV")
-            )
-        }
-
-        // Next
-        findViewById<ImageButton>(R.id.btnNext).setOnClickListener {
-            ContextCompat.startForegroundService(
-                this,
-                Intent(this, PlaybackService::class.java).setAction("ACTION_NEXT")
-            )
-        }
     }
 
     override fun onDestroy() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
         super.onDestroy()
     }
 
