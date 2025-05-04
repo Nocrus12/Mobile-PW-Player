@@ -4,11 +4,11 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
-import androidx.room.Room
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.lab_8_player.db.AppDatabase
 import com.example.lab_8_player.db.model.Song
+import com.example.lab_8_player.repository.SongRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -21,12 +21,13 @@ class MusicFetchWorker(
         var musicFolderUri: Uri? = null
     }
 
+
     override suspend fun doWork(): Result {
         return try {
-            val db = Room
-                .databaseBuilder(context, AppDatabase::class.java, "app_db")
-                .build()
-            val songDao = db.songDao()
+
+            val db by lazy { AppDatabase.getInstance(context.applicationContext) }
+            val songRepository = SongRepository(db.songDao())
+
 
             val root = MusicFetchWorker.musicFolderUri
                 ?.let { DocumentFile.fromTreeUri(context, it) }
@@ -69,11 +70,11 @@ class MusicFetchWorker(
 
             if (songs.isNotEmpty()) {
                 val uniqueSongs = withContext(Dispatchers.IO) {
-                    songs.filterNot { songDao.existsByUri(it.uri) }
+                    songs.filterNot { songRepository.existsByUri(it.uri) }
                 }
 
                 if (uniqueSongs.isNotEmpty()) {
-                    songDao.insertSongs(uniqueSongs)
+                    songRepository.insertSongs(uniqueSongs)
                 }
             }
 

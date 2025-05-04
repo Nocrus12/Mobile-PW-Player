@@ -43,7 +43,8 @@ class PlaybackService : Service() {
                 val to = intent.getIntExtra("EXTRA_SEEK_TO", 0)
                 if (::mediaPlayer.isInitialized) {
                     mediaPlayer.seekTo(to)
-                    broadcastState()   // so UI & notification both update
+                    broadcastState()
+                    updateHandler.postDelayed(updateRunnable, 500)
                 }
             }
 
@@ -210,13 +211,11 @@ class PlaybackService : Service() {
     private fun broadcastState() {
         val song = trackList.getOrNull(currentTrackIndex)
         val pos = mediaPlayer.currentPosition
-        val dur = mediaPlayer.duration
+
         val intent = Intent("PLAYBACK_STATE_CHANGED").apply {
-            putExtra("title", song?.name)
-            putExtra("artist", song?.artist)
+
             putExtra("isPlaying", mediaPlayer.isPlaying)
             putExtra("position", pos)
-            putExtra("duration", dur)
             putExtra("songId",  song!!.id)
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)

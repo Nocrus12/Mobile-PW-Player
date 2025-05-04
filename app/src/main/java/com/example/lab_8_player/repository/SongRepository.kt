@@ -10,15 +10,15 @@ class SongRepository(private val songDao: SongDao) {
 
     fun getAllFavorites(): Flow<List<Song>> = songDao.getAllFavorites()
 
-    fun getSongsByName(nameInput: String): Flow<List<Song>> = songDao.getSongsByName(nameInput)
+    suspend fun getSongById(id: Long): Song = songDao.getSongById(id)
 
-    suspend fun getAllUris(): List<String> = songDao.getAllUris()
+    fun getSongsByName(nameInput: String): Flow<List<Song>> = songDao.getSongsByName(nameInput)
 
     suspend fun existsByUri(uri: String): Boolean = songDao.existsByUri(uri)
 
     suspend fun insertSongs(songs: List<Song>) = songDao.insertSongs(songs)
 
-    suspend fun updateSong(songId: Long, isFavorite: Boolean) = songDao.updateSong(songId, isFavorite)
+    suspend fun toggleFavSong(songId: Long, isFavorite: Boolean) = songDao.toggleFavSong(songId, isFavorite)
 
     suspend fun deleteSong(song: Song) = songDao.deleteSong(song)
 }

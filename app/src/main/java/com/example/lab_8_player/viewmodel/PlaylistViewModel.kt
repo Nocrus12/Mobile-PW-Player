@@ -11,7 +11,7 @@ class PlaylistViewModel(app: Application, private val playlistRepository: Playli
 
     fun getAllPlaylists() = playlistRepository.getAllPlaylists()
 
-    suspend fun getPlaylistById(playlistId: Long) = playlistRepository.getPlaylistById(playlistId)
+    fun getPlaylistById(playlistId: Long) = playlistRepository.getPlaylistById(playlistId)
 
     fun insertPlaylist(name: String) {
         viewModelScope.launch {

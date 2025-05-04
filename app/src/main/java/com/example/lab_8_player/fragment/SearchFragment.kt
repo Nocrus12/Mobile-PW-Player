@@ -2,8 +2,6 @@ package com.example.lab_8_player.fragment
 
 import android.app.AlertDialog.Builder
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -144,7 +142,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun toggleFavorite(song: Song) {
-        songViewModel.updateFavorite(song.id, !song.isFavorite)
+        songViewModel.toggleFavSong(song.id, !song.isFavorite)
     }
 
     override fun onDestroyView() {

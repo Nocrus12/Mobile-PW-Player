@@ -1,11 +1,9 @@
 package com.example.lab_8_player.fragment
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -13,7 +11,6 @@ import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.lab_8_player.PlaybackService
 import com.example.lab_8_player.R
 import com.example.lab_8_player.adapter.AllSongsAdapter
 import com.example.lab_8_player.adapter.FavoriteSongsAdapter
@@ -216,7 +213,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun toggleFavorite(song: Song) {
-        songViewModel.updateFavorite(song.id, !song.isFavorite)
+        songViewModel.toggleFavSong(song.id, !song.isFavorite)
     }
 
     private fun openPlaylistFragment(playlistId: Long) {

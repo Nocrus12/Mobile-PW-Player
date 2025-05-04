@@ -13,24 +13,17 @@ class SongViewModel(app: Application, private val songRepository: SongRepository
 
     fun getAllFavorites() = songRepository.getAllFavorites()
 
+    suspend fun getSongById(id: Long) = songRepository.getSongById(id)
+
     fun getSongsByName(nameInput: String) = songRepository.getSongsByName(nameInput)
 
-    suspend fun getAllUris() = songRepository.getAllUris()
-
-    suspend fun existsByUri(uri: String) = songRepository.existsByUri(uri)
-
-    fun insertSongs(songs: List<Song>) = viewModelScope.launch {
-        songRepository.insertSongs(songs)
-    }
-
-    fun updateFavorite(songId: Long, isFavorite: Boolean) {
+    fun toggleFavSong(songId: Long, isFavorite: Boolean) {
         viewModelScope.launch {
-            songRepository.updateSong(songId, isFavorite)
+            songRepository.toggleFavSong(songId, isFavorite)
         }
     }
 
-
-
+    // Left to keep full CRUD
     fun deleteSong(song: Song) = viewModelScope.launch {
         songRepository.deleteSong(song)
     }

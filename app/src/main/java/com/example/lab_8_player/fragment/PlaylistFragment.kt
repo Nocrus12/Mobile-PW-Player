@@ -4,16 +4,12 @@ import android.app.AlertDialog.Builder
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.repeatOnLifecycle
@@ -42,8 +38,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.ArrayList
-import androidx.core.view.MenuProvider
-import androidx.core.view.MenuHost
 
 class PlaylistFragment : Fragment() {
 
@@ -204,7 +198,7 @@ class PlaylistFragment : Fragment() {
 
 
     private fun toggleFavorite(song: Song) {
-        songViewModel.updateFavorite(song.id, !song.isFavorite)
+        songViewModel.toggleFavSong(song.id, !song.isFavorite)
     }
 
     private fun showAddToPlaylistDialog(song: Song) {

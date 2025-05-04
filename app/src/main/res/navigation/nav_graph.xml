@@ -22,11 +22,6 @@
         tools:layout="@layout/fragment_search"/>
 
     <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.example.lab_8_player.fragment.SettingsFragment"
-        android:label="Settings"
-        tools:layout="@layout/fragment_settings"/>
-    <fragment
         android:id="@+id/playlistFragment"
         android:name="com.example.lab_8_player.fragment.PlaylistFragment"
         android:label="fragment_playlist"
