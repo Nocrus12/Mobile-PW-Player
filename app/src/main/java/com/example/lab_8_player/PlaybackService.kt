@@ -11,11 +11,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import androidx.media.app.NotificationCompat.MediaStyle
 import com.example.lab_8_player.db.model.Song
 import androidx.core.net.toUri
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.media.app.NotificationCompat.DecoratedMediaCustomViewStyle
 
 class PlaybackService : Service() {
 
@@ -132,58 +133,6 @@ class PlaybackService : Service() {
         broadcastState()
     }
 
-    override fun onDestroy() {
-        mediaPlayer.stop()
-        mediaPlayer.release()
-        super.onDestroy()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun createNotification(): Notification {
-        val isPlaying = ::mediaPlayer.isInitialized && mediaPlayer.isPlaying
-        val playPauseIcon = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-        val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_RESUME"
-
-
-        val playPausePI = PendingIntent.getService(this, 0, Intent(this, PlaybackService::class.java).apply {
-            action = playPauseAction
-        }, PendingIntent.FLAG_IMMUTABLE)
-
-        val prevPI = PendingIntent.getService(this, 1, Intent(this, PlaybackService::class.java).apply {
-            action = "ACTION_PREV"
-        }, PendingIntent.FLAG_IMMUTABLE)
-
-        val nextPI = PendingIntent.getService(this, 2, Intent(this, PlaybackService::class.java).apply {
-            action = "ACTION_NEXT"
-        }, PendingIntent.FLAG_IMMUTABLE)
-
-        val song = trackList.getOrNull(currentTrackIndex)
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(song?.name ?: "Unknown Title")
-            .setContentText(song?.artist ?: "Unknown Artist")
-            .setSmallIcon(R.drawable.music_note)
-            .addAction(R.drawable.ic_prev, "Prev", prevPI)
-            .addAction(playPauseIcon, playPauseAction, playPausePI)
-            .addAction(R.drawable.ic_next, "Next", nextPI)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true)
-            .setStyle(MediaStyle())
-            .build()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Music Playback",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
-    }
-
     private fun playAt(index: Int) {
 
         if (::mediaPlayer.isInitialized) {
@@ -203,6 +152,10 @@ class PlaybackService : Service() {
         override fun run() {
             if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
                 broadcastState()
+
+                val notification = createNotification()
+                val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                manager.notify(NOTIF_ID, notification)
                 updateHandler.postDelayed(this, 500)
             }
         }
@@ -220,6 +173,81 @@ class PlaybackService : Service() {
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
+
+    override fun onDestroy() {
+        mediaPlayer.stop()
+        mediaPlayer.release()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun createNotification(): Notification {
+        val isPlaying = ::mediaPlayer.isInitialized && mediaPlayer.isPlaying
+        val playPauseIcon = if (isPlaying) R.drawable.baseline_pause_24_white else R.drawable.baseline_play_arrow_24_white
+        val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_RESUME"
+
+        val progressPercent = if (::mediaPlayer.isInitialized && mediaPlayer.duration > 0)
+            (mediaPlayer.currentPosition * 100 / mediaPlayer.duration)
+        else 0
+
+
+        val playPausePI = PendingIntent.getService(this, 0, Intent(this, PlaybackService::class.java).apply {
+            action = playPauseAction
+        }, PendingIntent.FLAG_IMMUTABLE)
+
+        val prevPI = PendingIntent.getService(this, 1, Intent(this, PlaybackService::class.java).apply {
+            action = "ACTION_PREV"
+        }, PendingIntent.FLAG_IMMUTABLE)
+
+        val nextPI = PendingIntent.getService(this, 2, Intent(this, PlaybackService::class.java).apply {
+            action = "ACTION_NEXT"
+        }, PendingIntent.FLAG_IMMUTABLE)
+
+        val song = trackList.getOrNull(currentTrackIndex)
+
+        // Create custom small and big views
+        val smallView = RemoteViews(packageName, R.layout.notif_playback_small).apply {
+            setTextViewText(R.id.title, song?.name ?: "Unknown Title")
+            setTextViewText(R.id.artist, song?.artist ?: "Unknown Artist")
+//            setImageViewResource(R.id.play_pause, playPauseIcon)
+//            setOnClickPendingIntent(R.id.play_pause, playPausePI)
+//            setOnClickPendingIntent(R.id.prev, prevPI)
+//            setOnClickPendingIntent(R.id.next, nextPI)
+        }
+
+        val bigView = RemoteViews(packageName, R.layout.notif_playback_big).apply {
+            setTextViewText(R.id.title, song?.name ?: "Unknown Title")
+            setTextViewText(R.id.artist, song?.artist ?: "Unknown Artist")
+            setImageViewResource(R.id.btnPlayPause, playPauseIcon)
+            setOnClickPendingIntent(R.id.btnPlayPause, playPausePI)
+            setOnClickPendingIntent(R.id.btnPrev, prevPI)
+            setOnClickPendingIntent(R.id.btnNext, nextPI)
+            setProgressBar(R.id.progressBar, 100, progressPercent, false)
+        }
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.music_note)
+            .setCustomContentView(smallView)
+            .setCustomBigContentView(bigView)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setStyle(DecoratedMediaCustomViewStyle())
+            .build()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Music Playback",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
+    }
+
+
 
 
 }
