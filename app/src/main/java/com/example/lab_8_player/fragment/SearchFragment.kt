@@ -5,11 +5,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.lab_8_player.R
 import com.example.lab_8_player.adapter.AllSongsAdapter
 import com.example.lab_8_player.databinding.FragmentSearchBinding
 import com.example.lab_8_player.db.AppDatabase
@@ -92,52 +96,60 @@ class SearchFragment : Fragment() {
     }
 
     private fun showAddToPlaylistDialog(song: Song) {
-        val builder = Builder(requireContext())
-        builder.setTitle("Add to Playlist")
-
-        // Collect playlists asynchronously from Flow
         lifecycleScope.launch {
             val playlists = playlistViewModel.getAllPlaylists().firstOrNull() ?: emptyList()
-            val playlistNames = playlists.map { it.name } // Extract playlist names
-
-            // Fetch the cross-references (playlist-song relationships) for the song
+            val playlistNames = playlists.map { it.name }
             val existingCrossRefs = playlistSongCrossRefViewModel.getCrossRefsForSong(song.id)
-
-            // Create an array to keep track of checked states for each playlist
             val checkedItems = BooleanArray(playlistNames.size)
 
-            // Mark the checkboxes that are already associated with the song
             playlists.forEachIndexed { index, playlist ->
                 checkedItems[index] = existingCrossRefs.any { it.playlistId == playlist.id }
             }
 
-            // Show the multi-choice dialog
-            builder.setMultiChoiceItems(playlistNames.toTypedArray(), checkedItems) { _, index, isChecked ->
-                if (isChecked) {
-                    // Add the song to the playlist
+            val dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_add_to_playlist, null)
+
+            val checkboxContainer = dialogView.findViewById<LinearLayout>(R.id.playlistCheckboxContainer)
+
+            // Dynamically add checkboxes
+            val inflater = LayoutInflater.from(requireContext())
+
+            playlistNames.forEachIndexed { index, name ->
+                val checkbox = inflater.inflate(R.layout.item_playlist_checkbox, checkboxContainer, false) as CheckBox
+                checkbox.text = name
+                checkbox.isChecked = checkedItems[index]
+
+                checkbox.setOnCheckedChangeListener { _, isChecked ->
                     val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
                     lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.insertCrossRef(crossRef)
-                    }
-                } else {
-                    // Remove the song from the playlist
-                    val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
-                    lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        if (isChecked) {
+                            playlistSongCrossRefViewModel.insertCrossRef(crossRef)
+                        } else {
+                            playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        }
                     }
                 }
+
+                checkboxContainer.addView(checkbox)
             }
 
-            builder.setPositiveButton("Add") { dialog, _ ->
-                // You can add any final operations here if needed before dismissing
+
+            val dialog = Builder(requireContext())
+                .setView(dialogView)
+                .create()
+
+            val addButton = dialogView.findViewById<ImageButton>(R.id.addButton)
+            val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+
+            addButton.setOnClickListener {
                 dialog.dismiss()
             }
 
-            builder.setNegativeButton("Cancel") { dialog, _ ->
+            cancelButton.setOnClickListener {
                 dialog.cancel()
             }
 
-            builder.show()
+            dialog.show()
         }
     }
 

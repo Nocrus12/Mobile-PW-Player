@@ -6,6 +6,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -133,41 +137,64 @@ class PlaylistFragment : Fragment() {
     }
 
     private fun showRenameDialog() {
-        val editText = android.widget.EditText(requireContext()).apply {
-            setText(playlist.name)
-            selectAll()
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_edit_playlist, null)
+
+        val dialog = Builder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+        val saveButton = dialogView.findViewById<ImageButton>(R.id.saveButton)
+        val inputField = dialogView.findViewById<EditText>(R.id.playlistNameInput)
+
+        inputField.setText(playlist.name)
+        inputField.selectAll()
+
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
         }
 
-        Builder(requireContext())
-            .setTitle("Rename Playlist")
-            .setView(editText)
-            .setPositiveButton("OK") { dialog, _ ->
-                val newName = editText.text.toString().trim()
-                if (newName.isNotEmpty() && newName != playlist.name) {
-                    // updateViewModel
-                    playlistViewModel.updatePlaylist(
-                        playlist.copy(name = newName)
-                    )
-                }
-                dialog.dismiss()
+        saveButton.setOnClickListener {
+            val newName = inputField.text.toString().trim()
+            if (newName.isNotEmpty() && newName != playlist.name) {
+                playlistViewModel.updatePlaylist(
+                    playlist.copy(name = newName)
+                )
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
+
     private fun showDeleteConfirmation() {
-        Builder(requireContext())
-            .setTitle("Delete Playlist?")
-            .setMessage("This will remove the playlist but keep the songs. Are you sure?")
-            .setPositiveButton("Delete") { dialog, _ ->
-                playlistViewModel.deletePlaylist(playlist)
-                dialog.dismiss()
-                // navigate back to home
-                findNavController().navigateUp()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_delete_playlist, null)
+
+        val dialog = Builder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+        val deleteButton = dialogView.findViewById<ImageButton>(R.id.deleteButton) // Assuming red button is "Delete"
+
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        deleteButton.setOnClickListener {
+            playlistViewModel.deletePlaylist(playlist)
+            dialog.dismiss()
+            findNavController().navigateUp()
+        }
+
+        dialog.show()
     }
+
 
     private fun observeSongs() {
         val playlistId = args.playlistId
@@ -202,52 +229,60 @@ class PlaylistFragment : Fragment() {
     }
 
     private fun showAddToPlaylistDialog(song: Song) {
-        val builder = Builder(requireContext())
-        builder.setTitle("Add to Playlist")
-
-        // Collect playlists asynchronously from Flow
         lifecycleScope.launch {
             val playlists = playlistViewModel.getAllPlaylists().firstOrNull() ?: emptyList()
-            val playlistNames = playlists.map { it.name } // Extract playlist names
-
-            // Fetch the cross-references (playlist-song relationships) for the song
+            val playlistNames = playlists.map { it.name }
             val existingCrossRefs = playlistSongCrossRefViewModel.getCrossRefsForSong(song.id)
-
-            // Create an array to keep track of checked states for each playlist
             val checkedItems = BooleanArray(playlistNames.size)
 
-            // Mark the checkboxes that are already associated with the song
             playlists.forEachIndexed { index, playlist ->
                 checkedItems[index] = existingCrossRefs.any { it.playlistId == playlist.id }
             }
 
-            // Show the multi-choice dialog
-            builder.setMultiChoiceItems(playlistNames.toTypedArray(), checkedItems) { _, index, isChecked ->
-                if (isChecked) {
-                    // Add the song to the playlist
+            val dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_add_to_playlist, null)
+
+            val checkboxContainer = dialogView.findViewById<LinearLayout>(R.id.playlistCheckboxContainer)
+
+            // Dynamically add checkboxes
+            val inflater = LayoutInflater.from(requireContext())
+
+            playlistNames.forEachIndexed { index, name ->
+                val checkbox = inflater.inflate(R.layout.item_playlist_checkbox, checkboxContainer, false) as CheckBox
+                checkbox.text = name
+                checkbox.isChecked = checkedItems[index]
+
+                checkbox.setOnCheckedChangeListener { _, isChecked ->
                     val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
                     lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.insertCrossRef(crossRef)
-                    }
-                } else {
-                    // Remove the song from the playlist
-                    val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
-                    lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        if (isChecked) {
+                            playlistSongCrossRefViewModel.insertCrossRef(crossRef)
+                        } else {
+                            playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        }
                     }
                 }
+
+                checkboxContainer.addView(checkbox)
             }
 
-            builder.setPositiveButton("Add") { dialog, _ ->
-                // You can add any final operations here if needed before dismissing
+
+            val dialog = Builder(requireContext())
+                .setView(dialogView)
+                .create()
+
+            val addButton = dialogView.findViewById<ImageButton>(R.id.addButton)
+            val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+
+            addButton.setOnClickListener {
                 dialog.dismiss()
             }
 
-            builder.setNegativeButton("Cancel") { dialog, _ ->
+            cancelButton.setOnClickListener {
                 dialog.cancel()
             }
 
-            builder.show()
+            dialog.show()
         }
     }
 }

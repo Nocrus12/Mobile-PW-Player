@@ -25,12 +25,17 @@ import com.example.lab_8_player.viewmodel.SongViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.app.AlertDialog.Builder
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import androidx.navigation.findNavController
 import com.example.lab_8_player.db.model.PlaylistSongCrossRef
 import com.example.lab_8_player.db.model.Song
 import com.example.lab_8_player.repository.PlaylistSongCrossRefRepository
 import com.example.lab_8_player.viewmodel.PlaylistSongCrossRefViewModel
 import com.example.lab_8_player.viewmodel.PlaylistSongCrossRefViewModelFactory
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.flow.firstOrNull
 
 class HomeFragment : Fragment() {
@@ -140,77 +145,92 @@ class HomeFragment : Fragment() {
     }
 
     private fun showAddPlaylistDialog() {
-        val builder = Builder(requireContext())
-        builder.setTitle("Create New Playlist")
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_add_playlist, null)
 
-        val input = android.widget.EditText(requireContext())
-        input.hint = "Playlist name"
-        builder.setView(input)
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        bottomSheetDialog.setContentView(dialogView)
 
-        builder.setPositiveButton("Create") { dialog, _ ->
-            val playlistName = input.text.toString().trim()
-            if (playlistName.isNotEmpty()) {
-                playlistViewModel.insertPlaylist(playlistName)
+        val input = dialogView.findViewById<EditText>(R.id.playlistNameInput)
+        val createButton = dialogView.findViewById<ImageButton>(R.id.createButton)
+        val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+
+        createButton.setOnClickListener {
+            val name = input.text.toString().trim()
+            if (name.isNotEmpty()) {
+                playlistViewModel.insertPlaylist(name)
+                bottomSheetDialog.dismiss()
+            } else {
+                input.error = "Name can't be empty"
             }
-            dialog.dismiss()
         }
 
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
+        cancelButton.setOnClickListener {
+            bottomSheetDialog.dismiss()
         }
 
-        builder.show()
+        bottomSheetDialog.show()
     }
 
-    private fun showAddToPlaylistDialog(song: Song) {
-        val builder = Builder(requireContext())
-        builder.setTitle("Add to Playlist")
 
-        // Collect playlists asynchronously from Flow
+    private fun showAddToPlaylistDialog(song: Song) {
         lifecycleScope.launch {
             val playlists = playlistViewModel.getAllPlaylists().firstOrNull() ?: emptyList()
-            val playlistNames = playlists.map { it.name } // Extract playlist names
-
-            // Fetch the cross-references (playlist-song relationships) for the song
+            val playlistNames = playlists.map { it.name }
             val existingCrossRefs = playlistSongCrossRefViewModel.getCrossRefsForSong(song.id)
-
-            // Create an array to keep track of checked states for each playlist
             val checkedItems = BooleanArray(playlistNames.size)
 
-            // Mark the checkboxes that are already associated with the song
             playlists.forEachIndexed { index, playlist ->
                 checkedItems[index] = existingCrossRefs.any { it.playlistId == playlist.id }
             }
 
-            // Show the multi-choice dialog
-            builder.setMultiChoiceItems(playlistNames.toTypedArray(), checkedItems) { _, index, isChecked ->
-                if (isChecked) {
-                    // Add the song to the playlist
+            val dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_add_to_playlist, null)
+
+            val checkboxContainer = dialogView.findViewById<LinearLayout>(R.id.playlistCheckboxContainer)
+
+            // Dynamically add checkboxes
+            val inflater = LayoutInflater.from(requireContext())
+
+            playlistNames.forEachIndexed { index, name ->
+                val checkbox = inflater.inflate(R.layout.item_playlist_checkbox, checkboxContainer, false) as CheckBox
+                checkbox.text = name
+                checkbox.isChecked = checkedItems[index]
+
+                checkbox.setOnCheckedChangeListener { _, isChecked ->
                     val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
                     lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.insertCrossRef(crossRef)
-                    }
-                } else {
-                    // Remove the song from the playlist
-                    val crossRef = PlaylistSongCrossRef(playlists[index].id, song.id)
-                    lifecycleScope.launch {
-                        playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        if (isChecked) {
+                            playlistSongCrossRefViewModel.insertCrossRef(crossRef)
+                        } else {
+                            playlistSongCrossRefViewModel.deleteCrossRef(crossRef)
+                        }
                     }
                 }
+
+                checkboxContainer.addView(checkbox)
             }
 
-            builder.setPositiveButton("Add") { dialog, _ ->
-                // You can add any final operations here if needed before dismissing
+
+            val dialog = Builder(requireContext())
+                .setView(dialogView)
+                .create()
+
+            val addButton = dialogView.findViewById<ImageButton>(R.id.addButton)
+            val cancelButton = dialogView.findViewById<ImageButton>(R.id.cancelButton)
+
+            addButton.setOnClickListener {
                 dialog.dismiss()
             }
 
-            builder.setNegativeButton("Cancel") { dialog, _ ->
+            cancelButton.setOnClickListener {
                 dialog.cancel()
             }
 
-            builder.show()
+            dialog.show()
         }
     }
+
 
     private fun toggleFavorite(song: Song) {
         songViewModel.toggleFavSong(song.id, !song.isFavorite)
