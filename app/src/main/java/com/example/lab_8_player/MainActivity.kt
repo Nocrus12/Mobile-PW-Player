@@ -21,6 +21,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        MusicLibrary.tracks.clear()
+
         setContentView(R.layout.activity_main)
 
         // Setting up navigation

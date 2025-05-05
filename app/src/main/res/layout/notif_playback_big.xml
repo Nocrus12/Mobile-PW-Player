@@ -24,7 +24,7 @@
                 android:layout_marginBottom="5dp"
                 android:text="Song title"
                 android:singleLine="true"
-                android:textColor="@color/white"/>
+                android:textColor="@android:color/white"/>
 
             <TextView
                 android:id="@+id/artist"
@@ -57,7 +57,7 @@
             android:layout_marginBottom="10dp"
             android:background="@null"
             android:contentDescription="Previous"
-            android:src="@drawable/baseline_skip_previous_24_white"/>
+            android:src="@drawable/baseline_skip_previous_24"/>
 
         <ImageButton
             android:id="@+id/btnPlayPause"
@@ -65,7 +65,7 @@
             android:layout_height="60dp"
             android:background="@null"
             android:contentDescription="Play/Pause"
-            android:src="@drawable/baseline_play_arrow_24_white"/>
+            android:src="@drawable/baseline_play_arrow_24"/>
 
         <ImageButton
             android:id="@+id/btnNext"
@@ -75,7 +75,7 @@
             android:layout_marginBottom="10dp"
             android:background="@null"
             android:contentDescription="Next"
-            android:src="@drawable/baseline_skip_next_24_white"/>
+            android:src="@drawable/baseline_skip_next_24"/>
 
     </LinearLayout>
 
@@ -85,7 +85,7 @@
         android:layout_height="20dp"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:progressBackgroundTint="@color/white"
-        android:progressTint="#4CAF50"/>
+        android:progressTint="@color/main_green"/>
 
 </LinearLayout>
 

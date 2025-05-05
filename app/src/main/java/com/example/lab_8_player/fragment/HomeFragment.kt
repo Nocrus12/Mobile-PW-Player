@@ -224,12 +224,5 @@ class HomeFragment : Fragment() {
 
 }
 
-// TODO Fix: on init app start empty recyclers and no FG service. Fixes after switching pages/app restart
-
-
 // TODO Improve item_track layout:
 //  Format duration ms to mm:ss
-//  Add button "Add to favorites"
-//  Add button "Add to playlist"
-
-// Recyclers works fine, live updates from Flow emissions are viewed instantly

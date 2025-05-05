@@ -69,8 +69,8 @@ class MiniPlayerFragment : Fragment() {
 
                 // 1) Update play/pause button
                 binding.btnPlayPause.setImageResource(
-                    if (isPlaying) R.drawable.baseline_pause_24_white
-                    else R.drawable.baseline_play_arrow_24_white
+                    if (isPlaying) R.drawable.baseline_pause_24
+                    else R.drawable.baseline_play_arrow_24
                 )
 
                 // 2) Update seekbar

@@ -184,7 +184,7 @@ class PlaybackService : Service() {
 
     private fun createNotification(): Notification {
         val isPlaying = ::mediaPlayer.isInitialized && mediaPlayer.isPlaying
-        val playPauseIcon = if (isPlaying) R.drawable.baseline_pause_24_white else R.drawable.baseline_play_arrow_24_white
+        val playPauseIcon = if (isPlaying) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24
         val playPauseAction = if (isPlaying) "ACTION_PAUSE" else "ACTION_RESUME"
 
         val progressPercent = if (::mediaPlayer.isInitialized && mediaPlayer.duration > 0)
@@ -227,7 +227,7 @@ class PlaybackService : Service() {
         }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.music_note)
+            .setSmallIcon(R.drawable.baseline_music_note_24)
             .setCustomContentView(smallView)
             .setCustomBigContentView(bigView)
             .setOnlyAlertOnce(true)

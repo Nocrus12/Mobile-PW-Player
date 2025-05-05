@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/createPlaylistButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="128dp"
+    android:layout_height="128dp"
     android:gravity="center"
     android:textColor="@color/white"
     android:background="@drawable/baseline_playlist_add_24"
-    android:padding="48dp"
-    android:layout_margin="16dp"/>
+    android:layout_margin="8dp"/>

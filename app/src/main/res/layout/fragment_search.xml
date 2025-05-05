@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#181818">
+    android:background="@color/black">
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
@@ -12,7 +12,7 @@
         android:padding="16dp"
         android:hint="Search Music"
         android:theme="@style/Theme.Material3.Dark"
-        app:hintTextColor="#646464">
+        app:hintTextColor="@color/gray">
 
 
         <com.google.android.material.textfield.TextInputEditText
@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:text="No results found"
         android:textSize="16sp"
-        android:textColor="#646464"
+        android:textColor="@color/gray"
         android:gravity="center"
         android:padding="16dp"
         android:visibility="gone" />

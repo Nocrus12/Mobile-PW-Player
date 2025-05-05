@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     tools:context=".fragment.HomeFragment"
-    android:background="#181818">
+    android:background="@color/black">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -35,7 +35,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/favoritesRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="128dp"
+                android:layout_height="144dp"
                 android:overScrollMode="never"
                 android:nestedScrollingEnabled="false"
                 android:orientation="horizontal"
@@ -59,7 +59,7 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/playlistsRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="128dp"
+            android:layout_height="144dp"
             android:overScrollMode="never"
             android:nestedScrollingEnabled="false"
             android:orientation="horizontal"
@@ -84,6 +84,7 @@
             android:layout_height="wrap_content"
             android:overScrollMode="never"
             android:nestedScrollingEnabled="false"
+            android:elevation="0dp"
             tools:listitem="@layout/item_song" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

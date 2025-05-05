@@ -251,10 +251,3 @@ class PlaylistFragment : Fragment() {
         }
     }
 }
-
-
-// TODO Add:
-//  Edit playlist title feature through AlertDialog with textInput inside
-//  Delete playlist feature with AlertDialog for confirmation
-//  Play playlist feature
-//  Playlist title in its layout

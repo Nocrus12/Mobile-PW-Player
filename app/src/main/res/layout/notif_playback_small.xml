@@ -11,7 +11,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         style="@style/TextAppearance.Compat.Notification.Title"
-        android:text="Playback started (Replace with song.name)"/>
+        android:text="Playback started (Replace with song.name)"
+        android:singleLine="true"/>
 
     <TextView
         android:id="@+id/artist"
@@ -19,7 +20,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         style="@style/TextAppearance.Compat.Notification.Info"
-        android:text="Playback started (Replace with song.name)"/>
+        android:text="Playback started (Replace with song.name)"
+        android:singleLine="true"/>
 
 
 </LinearLayout>

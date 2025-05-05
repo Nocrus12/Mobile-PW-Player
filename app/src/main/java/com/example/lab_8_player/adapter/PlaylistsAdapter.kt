@@ -62,10 +62,10 @@ class PlaylistsAdapter(
         if (holder is PlaylistViewHolder) {
             val playlist = differ.currentList[position]
             holder.playlistTitle.text = playlist.name
-            holder.playlistCover.setImageResource(R.drawable.ic_playlist_placeholder)
+            holder.playlistCover.setImageResource(R.drawable.baseline_playlist_play_24)
 
             holder.itemView.setOnClickListener {
-                onPlaylistClicked(playlist.id) // <-- Pass playlistId
+                onPlaylistClicked(playlist.id)
             }
         } else if (holder is AddButtonViewHolder) {
             holder.itemView.setOnClickListener {

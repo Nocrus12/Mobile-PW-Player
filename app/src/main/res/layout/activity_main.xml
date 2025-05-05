@@ -2,7 +2,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_relative"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/black">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
@@ -25,15 +26,9 @@
         android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/black"
+        app:itemIconTint="@color/gray"
+        app:itemTextColor="@color/gray"
         app:menu="@menu/bottom_nav_bar" />
-
-<!--    <include-->
-<!--        android:id="@+id/mini_player"-->
-<!--        layout="@layout/mini_player"-->
-<!--        android:layout_above="@id/bottom_navigation"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content" />-->
-
-
 
 </RelativeLayout>

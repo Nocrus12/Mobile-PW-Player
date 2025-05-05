@@ -2,10 +2,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/miniPlayer"
     android:layout_width="match_parent"
-    android:layout_height="72dp"
-    android:background="#222"
+    android:layout_height="68dp"
+    android:paddingTop="8dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:background="@color/dark_gray"
     android:orientation="vertical"
-    android:padding="8dp"
+
     android:clickable="true"
     android:focusable="true"
     tools:context=".fragment.MiniPlayerFragment">
@@ -20,7 +23,7 @@
             android:layout_height="40dp"
             android:background="@null"
             android:contentDescription="Previous"
-            android:src="@drawable/baseline_skip_previous_24_white"/>
+            android:src="@drawable/baseline_skip_previous_24"/>
 
         <ImageButton
             android:id="@+id/btnPlayPause"
@@ -28,7 +31,7 @@
             android:layout_height="40dp"
             android:background="@null"
             android:contentDescription="Play/Pause"
-            android:src="@drawable/baseline_play_arrow_24_white"/>
+            android:src="@drawable/baseline_play_arrow_24"/>
 
         <ImageButton
             android:id="@+id/btnNext"
@@ -36,7 +39,7 @@
             android:layout_height="40dp"
             android:background="@null"
             android:contentDescription="Next"
-            android:src="@drawable/baseline_skip_next_24_white"/>
+            android:src="@drawable/baseline_skip_next_24"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -51,7 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Title"
-                android:textColor="@android:color/white"
+                android:textColor="@color/white"
                 android:textSize="14sp"
                 android:singleLine="true"/>
 
@@ -60,7 +63,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Artist"
-                android:textColor="#CCC"
+                android:textColor="@color/white"
                 android:textSize="12sp"/>
         </LinearLayout>
 
@@ -76,8 +79,11 @@
     <SeekBar
         android:id="@+id/miniSeekBar"
         android:layout_width="match_parent"
-        android:layout_height="12dp"
-        android:layout_marginTop="4dp"
-        android:max="1000" />
+        android:layout_height="20dp"
+        android:max="1000"
+        android:progress="250"
+        android:progressTint="@color/main_green"
+        android:progressBackgroundTint="@color/black"
+        android:thumbTint="@android:color/transparent"/>
 
 </LinearLayout>
