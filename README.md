@@ -34,20 +34,34 @@ This is music player app which fetches audio files from local device memory and 
 ## Database
 
 Simple SQLite DB with Room ORM
+Access the entities through DAOs
 
-Table Song
-- id: Long
-- uri: String
-- name: String
-- artist: String
-- duration: Int
-- isFavorite: Boolean
+```mermaid
 
-Table Playlist:
-- id: Long
-- name: String
+classDiagram
+        Song --|> PlaylistWithSongs : 1-M relation
+        Playlist --|> PlaylistWithSongs : 1-M relation    
 
-Song-Playlist relation: M-M
+        class Song {
+            +Long id
+            +String uri
+            +String name
+            +String artist
+            +Int duration
+            +Boolean isFavorite
+        }
+
+        class Playlist {
+            +Long id
+            +String name
+        }
+
+        class PlaylistWithSongs {
+            +Long id : Playlist FK
+            +Long id : Song FK
+        }
+
+```
 
 ## Misc
 
@@ -79,6 +93,9 @@ FOREGROUND SERVICE
 ### Navigation
 
 - Is used to enable cross-fragment navigation
-- `Navigation.SafeArgs` is used to pass data through navigation between fragments
+- Navigate between pages Home and Search via bottom menu
+- `Navigation.SafeArgs` is used to pass data through navigation Home -> Playlist
+- Mini player is included in main activity layout
+
 ![image](https://github.com/user-attachments/assets/e93ee099-de7d-4fc9-beb5-78ce978298c1)
 
