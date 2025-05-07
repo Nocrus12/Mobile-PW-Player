@@ -13,7 +13,9 @@
 # Description
 
 This is music player app which fetches audio files from local device memory and plays them providing basic functionality
-This project is made for final exam of subject "Mobile Development : Android"
+
+>[!NOTE]
+>This project is made for final exam of subject "Mobile Development : Android"
 
 ## Functionality
 
@@ -30,6 +32,8 @@ This project is made for final exam of subject "Mobile Development : Android"
 - Room 2.7.0
 
 ## Database
+
+Simple SQLite DB with Room ORM
 
 Table Song
 - id: Long
@@ -76,4 +80,5 @@ FOREGROUND SERVICE
 
 - Is used to enable cross-fragment navigation
 - `Navigation.SafeArgs` is used to pass data through navigation between fragments
+![image](https://github.com/user-attachments/assets/e93ee099-de7d-4fc9-beb5-78ce978298c1)
 
