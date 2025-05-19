@@ -16,6 +16,7 @@ This is music player app which fetches audio files from local device memory and 
 
 >[!NOTE]
 >This project is made for final exam of subject "Mobile Development : Android"
+>Formerly it was Laboratory Work 8 but then turned into final project
 
 ## Functionality
 
